@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign In — EduReserve Campus Portal{% endblock %}
+
+{% block content %}
+<div style="max-width: 540px; margin: 3rem auto; position: relative;">
+    
+    <!-- Editorial Accent Badge -->
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <span class="mono-tag" style="background: rgba(212, 246, 235, 0.08); padding: 0.35rem 0.9rem; border-radius: var(--radius-pill); border: 1px solid var(--border-subtle);">
+            CAMPUS IDENTITY INFRASTRUCTURE
+        </span>
+        <h1 style="font-size: 2.8rem; margin-top: 0.8rem; margin-bottom: 0.5rem;">
+            Sign in to <em>EduReserve</em>
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">
+            Authenticate with your official institutional credentials.
+        </p>
+    </div>
+
+    <!-- Centered Glass Panel -->
+    <div class="card" style="padding: 3rem 2.5rem;">
+        <form action="{{ url_for('login') }}" method="POST">
+            <div class="form-group">
+                <label class="form-label" for="loginEmail">
+                    Institutional Email Address
+                </label>
+                <input type="email" name="email" class="form-input" placeholder="student@school.edu" required id="loginEmail" autocomplete="email">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 2rem;">
+                <label class="form-label" for="loginPassword">
+                    Access Key / Password
+                </label>
+                <input type="password" name="password" class="form-input" placeholder="••••••••" required id="loginPassword" autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1rem;">
+                Authenticate & Enter <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <div style="position: relative; text-align: center; margin: 2.5rem 0 2rem;">
+            <div style="height: 1px; background: var(--border-subtle); position: absolute; top: 50%; left: 0; right: 0;"></div>
+            <span class="mono" style="position: relative; background: #0f2c22; padding: 0 1rem; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em;">
+                Quick Demo Access
+            </span>
+        </div>
+
+        <!-- Quick Demo One-Click Selectors -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
+            <button onclick="fillLogin('alex.mercer@school.edu', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
+                <i class="fas fa-user" style="color: var(--accent-mint); font-size: 0.75rem;"></i> Alex (Student)
+            </button>
+            <button onclick="fillLogin('leo.tanaka@school.edu', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
+                <i class="fas fa-user" style="color: var(--accent-mint); font-size: 0.75rem;"></i> Leo (Student)
+            </button>
+            <button onclick="fillLogin('chen@school.edu', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
+                <i class="fas fa-user-tie" style="color: var(--status-pending); font-size: 0.75rem;"></i> Mr. Chen (Teacher)
+            </button>
+            <button onclick="fillLogin('thorne@school.edu', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
+                <i class="fas fa-flask" style="color: var(--status-approved); font-size: 0.75rem;"></i> Dr. Thorne (TIC)
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function fillLogin(email, password) {
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('loginPassword').value = password;
+}
+</script>
+{% endblock %}

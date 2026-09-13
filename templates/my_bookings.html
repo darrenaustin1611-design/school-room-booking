@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}My Bookings — EduReserve{% endblock %}
+
+{% block content %}
+<div class="spacious-hero">
+    <div>
+        <span class="mono-tag" style="margin-bottom: 0.6rem;">
+            INDIVIDUAL RESERVATION LOG
+        </span>
+        <h1 class="spacious-hero-title">
+            My Campus <em>Bookings</em>
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 1.05rem; margin-top: 0.5rem;">
+            Review confirmed reservations, pending faculty approvals, and past space utilization history.
+        </p>
+    </div>
+</div>
+
+{% if bookings %}
+<div style="display: flex; flex-direction: column; gap: 2rem;">
+    {% for item in bookings %}
+    <div class="card" style="border-left: 3px solid {% if item.booking.status == 'APPROVED' %}var(--status-approved){% elif item.booking.status == 'CHECKED_IN' %}var(--status-checkedin){% elif item.booking.status == 'PENDING' %}var(--status-pending){% else %}var(--status-expired){% endif %}; padding: 2.5rem;">
+        <div class="card-header">
+            <div>
+                <span class="badge badge-{{ item.booking.status.lower() }}">{{ item.booking.status }}</span>
+                <h2 style="margin-top: 0.75rem; font-size: 1.9rem; color: #ffffff;">{{ item.room.name }}</h2>
+                <p class="mono" style="font-size: 0.85rem; color: var(--accent-mint); margin-top: 0.35rem;">
+                    <i class="fas fa-location-dot" style="margin-right: 0.35rem;"></i> {{ item.room.location }}
+                </p>
+            </div>
+            <div class="card-icon">
+                <i class="fas fa-{{ item.room.icon }}"></i>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; margin: 1.5rem 0 2rem; background: rgba(8, 24, 18, 0.45); border: 1px solid var(--border-subtle); padding: 1.5rem; border-radius: var(--radius-md);">
+            <div>
+                <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">DATE & TIME SLOT</span>
+                <strong style="color: #ffffff; font-size: 0.98rem;">{{ item.booking.booking_date }}</strong>
+                <div class="mono" style="font-size: 0.82rem; color: var(--accent-mint); margin-top: 0.2rem;">
+                    {{ item.booking.start_time }} — {{ item.booking.end_time }}
+                </div>
+            </div>
+            <div>
+                <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">RESERVATION PURPOSE</span>
+                <span style="color: var(--text-secondary); font-size: 0.92rem;">{{ item.booking.purpose }}</span>
+            </div>
+            <div>
+                <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">FACULTY IN CHARGE</span>
+                <strong style="color: #ffffff; font-size: 0.98rem;">{{ item.tic.name if item.tic else 'Teacher' }}</strong>
+            </div>
+            {% if item.booking.co_booker_ids %}
+            <div style="grid-column: 1 / -1; border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+                <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">AUTHORIZED CO-BOOKERS</span>
+                <span class="mono" style="color: var(--accent-mint); font-size: 0.86rem;">
+                    <i class="fas fa-users" style="margin-right: 0.35rem;"></i> {{ item.booking.co_booker_ids | join(', ') }}
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            {% if item.booking.status in ['APPROVED', 'PENDING_CONFIRMATION'] %}
+                <button onclick="openCheckInModal({{ item.booking.id }}, '{{ item.room.name }}')" class="btn btn-primary">
+                    <i class="fas fa-qrcode"></i> Check In With Room PIN
+                </button>
+            {% endif %}
+
+            {% if item.booking.status == 'PENDING_CONFIRMATION' %}
+                <button onclick="confirmComing({{ item.booking.id }})" class="btn btn-secondary" style="color: #fbbf24; border-color: rgba(251, 191, 36, 0.4);">
+                    <i class="fas fa-person-walking"></i> Confirm: On My Way (+15m)
+                </button>
+            {% endif %}
+
+            {% if item.booking.status == 'CHECKED_IN' %}
+                <button onclick="openExtensionModal({{ item.booking.id }})" class="btn btn-secondary">
+                    <i class="fas fa-clock-rotate-left"></i> Request Extension
+                </button>
+                <form action="{{ url_for('check_out_booking', booking_id=item.booking.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-door-closed"></i> Check Out
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card" style="text-align: center; padding: 4.5rem 2rem;">
+    <div class="card-icon" style="margin: 0 auto 1.5rem auto; width: 64px; height: 64px;">
+        <i class="fas fa-calendar-xmark"></i>
+    </div>
+    <h3 style="font-size: 1.8rem; margin-bottom: 0.5rem;">No Bookings Found</h3>
+    <p style="color: var(--text-secondary); font-size: 1rem; max-width: 440px; margin: 0 auto 2rem auto;">
+        You haven't submitted any room reservations yet.
+    </p>
+    <a href="{{ url_for('rooms_catalog') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Book a Facility
+    </a>
+</div>
+{% endif %}
+
+<!-- QR PIN Check-in Modal -->
+<div class="modal-overlay" id="qrCheckInModal">
+    <div class="modal-card">
+        <span class="mono-tag" style="margin-bottom: 0.5rem;">SECURITY VERIFICATION</span>
+        <h2 style="font-size: 1.8rem; margin: 0.4rem 0 0.5rem;">Room Check-In</h2>
+        <p style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 1.75rem;">
+            Checking in for <strong id="modalRoomTitle" style="color: #ffffff;">Room</strong>. Enter the 4-digit PIN displayed on the room door placard.
+        </p>
+
+        <input type="hidden" id="modalBookingId">
+        <div class="form-group">
+            <label class="form-label" for="modalPinInput">4-Digit Security PIN</label>
+            <input type="text" id="modalPinInput" class="form-input mono" placeholder="••••" maxlength="6" style="font-size: 1.5rem; letter-spacing: 0.35em; text-align: center;">
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button onclick="submitCheckIn()" class="btn btn-primary" style="flex: 1;">
+                <i class="fas fa-shield-check"></i> Verify & Check In
+            </button>
+            <button data-close-modal class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Extension Modal -->
+<div class="modal-overlay" id="extensionModal">
+    <div class="modal-card">
+        <span class="mono-tag" style="margin-bottom: 0.5rem;">TIME ADJUSTMENT</span>
+        <h2 style="font-size: 1.8rem; margin: 0.4rem 0 0.5rem;">Request Extension</h2>
+        <p style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 1.75rem;">
+            Request extra room allocation if no subsequent reservations exist for this facility.
+        </p>
+
+        <input type="hidden" id="extBookingId">
+        <div class="form-group">
+            <label class="form-label" for="extMinutesSelect">Extension Duration</label>
+            <select id="extMinutesSelect" class="form-select">
+                <option value="15">+15 Minutes</option>
+                <option value="30">+30 Minutes</option>
+                <option value="60">+60 Minutes</option>
+            </select>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button onclick="submitExtension()" class="btn btn-primary" style="flex: 1;">
+                <i class="fas fa-paper-plane"></i> Submit Extension
+            </button>
+            <button data-close-modal class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

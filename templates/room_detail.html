@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ room.name }} — EduReserve Space Details{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <a href="{{ url_for('rooms_catalog') }}" class="btn btn-secondary" style="font-size: 0.84rem; padding: 0.45rem 1.1rem;">
+        <i class="fas fa-arrow-left"></i> Back to Facilities
+    </a>
+</div>
+
+<div class="dashboard-dual-grid">
+    <!-- Main Left Column: Room Details & Booking Form -->
+    <div>
+        <div class="card" style="margin-bottom: 2.5rem; padding: 2.8rem;">
+            <div class="card-header">
+                <div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem;">
+                        <span class="badge badge-approved">{{ room.category.replace('_', ' ') }}</span>
+                        {% if room.requires_after_hours_only %}
+                            <span class="badge badge-pending"><i class="fas fa-moon"></i> After-Hours Only (15:30+)</span>
+                        {% endif %}
+                    </div>
+                    <h1 style="font-size: 2.4rem; color: #ffffff; margin-top: 0.4rem;">{{ room.name }}</h1>
+                    <p class="mono" style="color: var(--accent-mint); font-size: 0.84rem; margin-top: 0.4rem;">
+                        <i class="fas fa-location-dot" style="margin-right: 0.35rem;"></i> {{ room.location }} &bull; Max Capacity: <strong>{{ room.capacity }} occupants</strong>
+                    </p>
+                </div>
+                <div class="card-icon" style="width: 58px; height: 58px; font-size: 1.5rem;">
+                    <i class="fas fa-{{ room.icon }}"></i>
+                </div>
+            </div>
+
+            <p style="color: var(--text-secondary); font-size: 1rem; line-height: 1.7; margin: 1.5rem 0;">
+                {{ room.description }}
+            </p>
+
+            {% if room.requires_after_hours_only %}
+            <div style="padding: 1rem 1.4rem; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.28); border-radius: var(--radius-sm); color: #fbbf24; font-size: 0.88rem; margin-bottom: 2rem;">
+                <i class="fas fa-clock" style="margin-right: 0.4rem;"></i> <strong>After-Hours Policy:</strong> This classroom is reserved for standard curriculum until 15:30. Student bookings are eligible from 15:30 onwards.
+            </div>
+            {% endif %}
+
+            <!-- Advance Booking Form -->
+            <form action="{{ url_for('create_booking_route') }}" method="POST" style="background: rgba(8, 24, 18, 0.5); padding: 2.2rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-top: 2rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                    <span class="mono-tag">[RESERVATION REQUEST FORM]</span>
+                </div>
+                <input type="hidden" name="room_id" value="{{ room.id }}">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label">Booking Date</label>
+                        <input type="date" name="booking_date" class="form-input" value="{{ selected_date }}" required min="{{ today_str }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Start Time</label>
+                        <select name="start_time" class="form-select" required>
+                            <option value="15:30">15:30</option>
+                            <option value="16:00">16:00</option>
+                            <option value="16:30">16:30</option>
+                            <option value="17:00">17:00</option>
+                            <option value="17:30">17:30</option>
+                            <option value="18:00">18:00</option>
+                            <option value="18:30">18:30</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">End Time (Max 2h)</label>
+                        <select name="end_time" class="form-select" required>
+                            <option value="16:30">16:30</option>
+                            <option value="17:00">17:00</option>
+                            <option value="17:30">17:30</option>
+                            <option value="18:00">18:00</option>
+                            <option value="18:30">18:30</option>
+                            <option value="19:00">19:00</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Purpose / Planned Activities</label>
+                    <input type="text" name="purpose" class="form-input" placeholder="e.g. Robotics Team Fabrication / Physics Olympiad Study" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-users" style="color: var(--accent-mint); margin-right: 0.35rem;"></i> Group Members / Co-Bookers (Student IDs)
+                    </label>
+                    <input type="text" name="co_booker_ids" class="form-input" placeholder="e.g. STU1002, STU1003 (comma separated)">
+                    <small class="mono" style="color: var(--text-muted); font-size: 0.74rem; margin-top: 0.5rem; display: block;">
+                        Any listed co-booker can scan the door PIN upon arrival to authenticate the session.
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; margin-top: 1rem;">
+                    <i class="fas fa-paper-plane"></i> Submit Reservation for Faculty Approval
+                </button>
+            </form>
+        </div>
+
+        <!-- Schedule Section -->
+        <div style="margin-bottom: 1.25rem;">
+            <span class="mono-tag">[SCHEDULE &bull; {{ selected_date }}]</span>
+        </div>
+        <div class="card" style="padding: 2.2rem;">
+            {% if existing_bookings %}
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% for b in existing_bookings %}
+                        <div style="padding: 1.1rem 1.4rem; background: rgba(8, 24, 18, 0.45); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong class="mono" style="color: var(--accent-mint); font-size: 0.95rem;">
+                                    <i class="fas fa-clock" style="margin-right: 0.35rem;"></i> {{ b.start_time }} — {{ b.end_time }}
+                                </strong>
+                                <span style="font-size: 0.88rem; color: var(--text-secondary); margin-left: 1rem;">{{ b.purpose }}</span>
+                            </div>
+                            <span class="badge badge-{{ b.status.lower() }}">{{ b.status }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align: center; padding: 2rem 1rem;">
+                    <i class="fas fa-calendar-check" style="font-size: 2rem; color: var(--accent-mint); opacity: 0.5; margin-bottom: 0.5rem;"></i>
+                    <p style="color: var(--text-muted); font-size: 0.92rem;">No conflicting reservations for this date. All standard slots open.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right Sidebar Column -->
+    <div>
+        {% if tic %}
+        <div class="card" style="margin-bottom: 2.2rem; padding: 2.2rem;">
+            <span class="mono-tag" style="margin-bottom: 1rem;">FACULTY IN CHARGE</span>
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="user-avatar" style="width: 48px; height: 48px; font-size: 1.2rem;">
+                    {{ tic.name[0] }}
+                </div>
+                <div>
+                    <h3 style="font-size: 1.2rem;">{{ tic.name }}</h3>
+                    <span class="mono" style="font-size: 0.78rem; color: var(--text-muted);">{{ tic.department }}</span>
+                </div>
+            </div>
+
+            <div style="font-size: 0.88rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.75rem; border-top: 1px solid var(--border-subtle); padding-top: 1.2rem;">
+                <div><i class="fas fa-envelope" style="color: var(--accent-mint); width: 22px;"></i> {{ tic.email }}</div>
+                <div><i class="fas fa-phone" style="color: var(--accent-mint); width: 22px;"></i> {{ tic.contact_phone }}</div>
+                <div><i class="fas fa-location-dot" style="color: var(--accent-mint); width: 22px;"></i> {{ tic.office_location }}</div>
+                <div><i class="fas fa-clock" style="color: var(--accent-mint); width: 22px;"></i> {{ tic.office_hours }}</div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Room Scannable PIN Poster -->
+        <div class="card" style="text-align: center; padding: 2.5rem 2rem;">
+            <span class="mono-tag" style="margin-bottom: 0.75rem;">CHECK-IN AUTHENTICATION</span>
+            <h3 style="font-size: 1.2rem; margin-bottom: 0.4rem;">Room Placard Code</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Scan QR or enter PIN when physically present at the entrance.
+            </p>
+
+            <img src="{{ qr_data.qr_image_url }}" alt="Room QR Code" style="width: 170px; height: 170px; border-radius: var(--radius-sm); border: 2px solid var(--border-glow); margin: 0 auto 1.5rem auto; display: block; background: white; padding: 6px;">
+            
+            <div class="mono" style="background: rgba(8, 24, 18, 0.85); border: 1px solid var(--border-card); padding: 0.75rem 1.25rem; border-radius: var(--radius-pill); font-size: 1.3rem; letter-spacing: 0.25em; font-weight: bold; color: var(--accent-mint); display: inline-block;">
+                PIN: {{ room.qr_pin }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

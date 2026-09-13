@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Faculty Directory — EduReserve{% endblock %}
+
+{% block content %}
+<div class="spacious-hero">
+    <div>
+        <span class="mono-tag" style="margin-bottom: 0.6rem;">
+            CAMPUS FACULTY & INSTRUCTIONAL STAFF
+        </span>
+        <h1 class="spacious-hero-title">
+            Faculty <em>Directory</em>
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 1.05rem; margin-top: 0.5rem; max-width: 620px;">
+            Direct contact information, office hours, and facility assignments for Teachers-in-Charge and Academic Staff.
+        </p>
+    </div>
+</div>
+
+<div class="grid-cards">
+    {% for item in teacher_list %}
+    <div class="card" style="display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.5rem;">
+            <div class="user-avatar" style="width: 54px; height: 54px; font-size: 1.4rem;">
+                {{ item.teacher.name[0] }}
+            </div>
+            <div>
+                <h3 style="font-size: 1.35rem; color: #ffffff;">{{ item.teacher.name }}</h3>
+                <span class="badge badge-approved" style="margin-top: 0.35rem;">{{ item.teacher.department }}</span>
+            </div>
+        </div>
+
+        <div style="background: rgba(8, 24, 18, 0.45); border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.88rem;">
+            <div>
+                <i class="fas fa-envelope" style="color: var(--accent-mint); width: 22px;"></i>
+                <span style="color: var(--text-secondary);">Email:</span> <strong style="color: #ffffff;">{{ item.teacher.email }}</strong>
+            </div>
+            <div>
+                <i class="fas fa-phone" style="color: var(--accent-mint); width: 22px;"></i>
+                <span style="color: var(--text-secondary);">Phone:</span> <strong style="color: #ffffff;">{{ item.teacher.contact_phone }}</strong>
+            </div>
+            <div>
+                <i class="fas fa-location-dot" style="color: var(--accent-mint); width: 22px;"></i>
+                <span style="color: var(--text-secondary);">Office:</span> <strong style="color: #ffffff;">{{ item.teacher.office_location }}</strong>
+            </div>
+            <div>
+                <i class="fas fa-clock" style="color: var(--accent-mint); width: 22px;"></i>
+                <span style="color: var(--text-secondary);">Hours:</span> <strong style="color: #ffffff;">{{ item.teacher.office_hours }}</strong>
+            </div>
+        </div>
+
+        <div style="margin-top: auto;">
+            <span class="mono" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 0.6rem; letter-spacing: 0.05em;">
+                MANAGED SPACES:
+            </span>
+            {% if item.managed_rooms %}
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    {% for r in item.managed_rooms %}
+                        <a href="{{ url_for('room_detail', room_id=r.id) }}" class="badge badge-checkedin" style="text-decoration: none;">
+                            <i class="fas fa-door-open"></i> {{ r.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <span class="mono" style="font-size: 0.8rem; color: var(--text-muted);">
+                    General Academic & Homeroom Staff
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

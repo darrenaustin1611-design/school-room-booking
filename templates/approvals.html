@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Approval Queue — EduReserve{% endblock %}
+
+{% block content %}
+<div class="spacious-hero">
+    <div>
+        <span class="mono-tag" style="margin-bottom: 0.6rem;">
+            FACULTY AUTHORIZATION CONSOLE
+        </span>
+        <h1 class="spacious-hero-title">
+            Approval <em>Queue</em>
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 1.05rem; margin-top: 0.5rem; max-width: 600px;">
+            Review binding facility reservations for your supervised laboratories and monitor homeroom student activity.
+        </p>
+    </div>
+</div>
+
+<!-- Pending Approvals Section -->
+<div style="margin-bottom: 3.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <span class="mono-tag" style="color: #fbbf24;">
+            [01 // PENDING FACILITY REQUESTS &bull; {{ pending_list | length }}]
+        </span>
+    </div>
+
+    {% if pending_list %}
+    <div style="display: flex; flex-direction: column; gap: 1.8rem;">
+        {% for item in pending_list %}
+        <div class="card" style="border-left: 3px solid #fbbf24; padding: 2.4rem;">
+            <div class="card-header">
+                <div>
+                    <span class="badge badge-pending">Faculty Binding Authorization Required</span>
+                    <h2 style="margin-top: 0.6rem; font-size: 1.8rem; color: #ffffff;">{{ item.room.name }}</h2>
+                    <p class="mono" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.3rem;">
+                        Requested by <strong style="color: #ffffff;">{{ item.student.name }}</strong> &bull; Grade {{ item.student.grade_level }} &bull; ID: {{ item.student.student_id_number }}
+                    </p>
+                </div>
+                <div class="card-icon">
+                    <i class="fas fa-{{ item.room.icon }}"></i>
+                </div>
+            </div>
+
+            <div style="background: rgba(8, 24, 18, 0.45); border: 1px solid var(--border-subtle); padding: 1.4rem 1.6rem; border-radius: var(--radius-md); margin: 1.2rem 0 1.8rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div>
+                    <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">REQUESTED TIME SLOT</span>
+                    <strong style="color: #ffffff; font-size: 1rem;">{{ item.booking.booking_date }}</strong>
+                    <div class="mono" style="font-size: 0.84rem; color: var(--accent-mint); margin-top: 0.2rem;">
+                        {{ item.booking.start_time }} — {{ item.booking.end_time }}
+                    </div>
+                </div>
+                <div>
+                    <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">INTENDED PURPOSE</span>
+                    <span style="color: var(--text-secondary); font-size: 0.92rem;">{{ item.booking.purpose }}</span>
+                </div>
+                {% if item.booking.co_booker_ids %}
+                <div style="grid-column: 1 / -1; border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+                    <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">DELEGATED CO-BOOKERS</span>
+                    <span class="mono" style="color: var(--accent-mint); font-size: 0.86rem;">
+                        <i class="fas fa-users" style="margin-right: 0.35rem;"></i> {{ item.booking.co_booker_ids | join(', ') }}
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="handleApproval({{ item.booking.id }}, 'APPROVE')" class="btn btn-success">
+                    <i class="fas fa-check"></i> Approve & Guarantee Slot
+                </button>
+                <button onclick="handleApproval({{ item.booking.id }}, 'REJECT')" class="btn btn-danger">
+                    <i class="fas fa-times"></i> Decline Request
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 3.5rem 2rem;">
+        <div class="card-icon" style="margin: 0 auto 1.2rem auto; width: 56px; height: 56px;">
+            <i class="fas fa-clipboard-check"></i>
+        </div>
+        <h3 style="font-size: 1.6rem; margin-bottom: 0.35rem;">No Pending Approvals</h3>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">All incoming booking requests have been reviewed.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- FYI Notifications Section -->
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <span class="mono-tag">
+            [02 // HOMEROOM STUDENT ACTIVITY &bull; FYI DISPATCH]
+        </span>
+    </div>
+
+    {% if fyi_list %}
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        {% for item in fyi_list %}
+        <div class="card" style="padding: 1.8rem 2.2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <span class="badge badge-checkedin">Homeroom FYI Alert</span>
+                    <h3 style="margin-top: 0.4rem; font-size: 1.35rem; color: #ffffff;">
+                        Student <strong>{{ item.student.name }}</strong> reserved <strong>{{ item.room.name }}</strong>
+                    </h3>
+                    <p class="mono" style="font-size: 0.84rem; color: var(--text-secondary); margin-top: 0.3rem;">
+                        {{ item.booking.booking_date }} &bull; {{ item.booking.start_time }} — {{ item.booking.end_time }} &bull; Status: <strong style="color: var(--accent-mint);">{{ item.booking.status }}</strong>
+                    </p>
+                </div>
+                <div class="mono" style="font-size: 0.8rem; color: var(--text-muted);">
+                    Facility TIC: {{ item.tic.name if item.tic else 'Staff' }}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 2.5rem 2rem;">
+        <p style="color: var(--text-muted); font-size: 0.92rem;">No recent bookings logged for your homeroom students.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
