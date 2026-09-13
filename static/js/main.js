@@ -93,11 +93,13 @@ function initScrollPhysics() {
             }
         });
 
-        // Parallax depth on ambient background gradient
+        // Parallax depth on ambient background gradient (clamped so it never leaves the viewport)
         if (bgGradient) {
-            const parallaxY = currentScrollY * -0.04;
+            const maxOffset = 45;
+            const parallaxY = Math.max(-maxOffset, Math.min(maxOffset, currentScrollY * -0.012));
             bgGradient.style.transform = `translate3d(0, ${parallaxY}px, 0)`;
         }
+
 
         lastScrollY = currentScrollY;
         lastTime = currentTime;
@@ -362,7 +364,7 @@ function initAmbientParticleCanvas() {
         height = canvas.height = window.innerHeight;
     });
 
-    const particleCount = Math.min(Math.floor((width * height) / 28000), 50);
+    const particleCount = Math.min(Math.max(65, Math.floor((width * height) / 16000)), 90);
     const particles = [];
 
     class Particle {
@@ -373,29 +375,29 @@ function initAmbientParticleCanvas() {
         reset() {
             this.x = Math.random() * width;
             this.y = Math.random() * height;
-            this.vx = (Math.random() - 0.5) * 0.4;
-            this.vy = (Math.random() - 0.5) * 0.4;
-            this.radius = Math.random() * 2.2 + 1;
-            this.baseAlpha = Math.random() * 0.35 + 0.15;
+            this.vx = (Math.random() - 0.5) * 0.35;
+            this.vy = (Math.random() - 0.5) * 0.35;
+            this.radius = Math.random() * 2.2 + 1.1;
+            this.baseAlpha = Math.random() * 0.4 + 0.2;
             this.alpha = this.baseAlpha;
-            this.pulseSpeed = Math.random() * 0.02 + 0.01;
+            this.pulseSpeed = Math.random() * 0.025 + 0.01;
             this.pulseOffset = Math.random() * Math.PI * 2;
         }
 
         update(time, scrollPush) {
-            // Incorporate scroll warp stream physics
-            this.y -= scrollPush * 0.25;
+            // Smooth inertia scroll response
+            this.y -= scrollPush * 0.18;
             this.x += this.vx;
             this.y += this.vy;
 
-            // Wrap around boundaries
+            // Seamless infinite wrap around viewport boundaries so screen is always filled
             if (this.x < 0) this.x = width;
             if (this.x > width) this.x = 0;
-            if (this.y < 0) this.y = height;
-            if (this.y > height) this.y = 0;
+            if (this.y < 0) this.y = ((this.y % height) + height) % height;
+            if (this.y > height) this.y = this.y % height;
 
             // Breathing pulse
-            this.alpha = this.baseAlpha + Math.sin(time * this.pulseSpeed + this.pulseOffset) * 0.12;
+            this.alpha = this.baseAlpha + Math.sin(time * this.pulseSpeed + this.pulseOffset) * 0.14;
 
             // Cursor interactive repulsion
             const dx = this.x - mouse.x;
@@ -412,21 +414,21 @@ function initAmbientParticleCanvas() {
 
         draw(scrollPush) {
             ctx.beginPath();
-            const stretch = Math.max(1, Math.min(Math.abs(scrollPush) * 0.8, 12));
+            const stretch = Math.max(1, Math.min(Math.abs(scrollPush) * 0.6, 10));
 
-            if (stretch > 2) {
+            if (stretch > 2.2) {
                 // Motion blur trail line during fast scroll
                 ctx.moveTo(this.x, this.y);
-                ctx.lineTo(this.x, this.y + (scrollPush > 0 ? stretch * 2 : -stretch * 2));
-                ctx.strokeStyle = `rgba(212, 246, 235, ${Math.min(1, this.alpha * 1.5)})`;
+                ctx.lineTo(this.x, this.y + (scrollPush > 0 ? stretch * 1.8 : -stretch * 1.8));
+                ctx.strokeStyle = `rgba(212, 246, 235, ${Math.min(1, this.alpha * 1.4)})`;
                 ctx.lineWidth = this.radius * 0.9;
                 ctx.stroke();
             } else {
                 // Crisp circular luminescent orb
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(212, 246, 235, ${Math.max(0, this.alpha)})`;
-                ctx.shadowBlur = 12;
-                ctx.shadowColor = 'rgba(159, 227, 206, 0.45)';
+                ctx.fillStyle = `rgba(212, 246, 235, ${Math.max(0.05, this.alpha)})`;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(159, 227, 206, 0.5)';
                 ctx.fill();
                 ctx.shadowBlur = 0;
             }
@@ -440,6 +442,13 @@ function initAmbientParticleCanvas() {
     let time = 0;
     function render() {
         time++;
+        
+        // Ensure canvas stays perfectly fitted to viewport
+        if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
         ctx.clearRect(0, 0, width, height);
 
         const currentPush = globalScrollVelocity;
@@ -451,13 +460,13 @@ function initAmbientParticleCanvas() {
                 const dy = particles[i].y - particles[j].y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                if (dist < 130) {
-                    const lineAlpha = (1 - dist / 130) * 0.12;
+                if (dist < 120) {
+                    const lineAlpha = (1 - dist / 120) * 0.14;
                     ctx.beginPath();
                     ctx.moveTo(particles[i].x, particles[i].y);
                     ctx.lineTo(particles[j].x, particles[j].y);
                     ctx.strokeStyle = `rgba(159, 227, 206, ${lineAlpha})`;
-                    ctx.lineWidth = 0.8;
+                    ctx.lineWidth = 0.75;
                     ctx.stroke();
                 }
             }
@@ -470,6 +479,7 @@ function initAmbientParticleCanvas() {
 
         requestAnimationFrame(render);
     }
+
 
     render();
 }

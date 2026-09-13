@@ -89,8 +89,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   position: relative;
-  perspective: 1400px;
 }
+
 
 /* ==========================================================================
    Scroll-Linked Top Progress Rail (United Carriers Style)
@@ -201,7 +201,10 @@ body {
    ========================================================================== */
 #bg-gradient {
   position: fixed;
-  inset: 0;
+  top: -80px;
+  bottom: -80px;
+  left: 0;
+  right: 0;
   z-index: 0;
   pointer-events: none;
   background-color: var(--bg-deep);
@@ -232,8 +235,9 @@ body {
   height: 100vh;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.9;
 }
+
 
 /* ==========================================================================
    Typography Masterclass
