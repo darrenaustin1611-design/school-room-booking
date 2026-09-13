@@ -108,17 +108,17 @@ def seed_demo_data(conn):
     # 1. Teachers
     teachers = [
         # id=1: Dr. Aris Thorne (Physics TIC)
-        ("Dr. Aris Thorne", "thorne@school.edu", default_pw, "teacher", None, None, None, None, "Physics Department", "Science Hall 201", "Ext. 4101", "Mon-Fri 14:00 - 16:00", None),
+        ("Dr. Aris Thorne", "thorne@smamarsudirinibekasi.sch.id", default_pw, "teacher", None, None, None, None, "Physics Department", "Science Hall 201", "Ext. 4101", "Mon-Fri 14:00 - 16:00", None),
         # id=2: Ms. Elena Rostova (Chemistry/Bio/Lang Lab TIC)
-        ("Ms. Elena Rostova", "rostova@school.edu", default_pw, "teacher", None, None, None, None, "Chemistry & Life Sciences", "Science Hall 105", "Ext. 4105", "Mon-Thu 13:00 - 15:00", None),
+        ("Ms. Elena Rostova", "rostova@smamarsudirinibekasi.sch.id", default_pw, "teacher", None, None, None, None, "Chemistry & Life Sciences", "Science Hall 105", "Ext. 4105", "Mon-Thu 13:00 - 15:00", None),
         # id=3: Mr. David Chen (Homeroom Teacher Class 10-A)
-        ("Mr. David Chen", "chen@school.edu", default_pw, "teacher", None, None, None, None, "Mathematics Department", "Main Building 302", "Ext. 4302", "Daily 15:30 - 16:30", None),
+        ("Mr. David Chen", "chen@smamarsudirinibekasi.sch.id", default_pw, "teacher", None, None, None, None, "Mathematics Department", "Main Building 302", "Ext. 4302", "Daily 15:30 - 16:30", None),
         # id=4: Mrs. Sarah Jenkins (Homeroom Teacher Class 10-B)
-        ("Mrs. Sarah Jenkins", "jenkins@school.edu", default_pw, "teacher", None, None, None, None, "Language Arts", "Humanities Wing 110", "Ext. 4210", "Mon/Wed/Fri 15:00 - 16:00", None),
+        ("Mrs. Sarah Jenkins", "jenkins@smamarsudirinibekasi.sch.id", default_pw, "teacher", None, None, None, None, "Language Arts", "Humanities Wing 110", "Ext. 4210", "Mon/Wed/Fri 15:00 - 16:00", None),
         # id=5: Coach Marcus Vance (Sports Courts TIC)
-        ("Coach Marcus Vance", "vance@school.edu", default_pw, "teacher", None, None, None, None, "Physical Education", "Gymnasium Office 1", "Ext. 4500", "Daily 14:00 - 17:00", None),
+        ("Coach Marcus Vance", "vance@smamarsudirinibekasi.sch.id", default_pw, "teacher", None, None, None, None, "Physical Education", "Gymnasium Office 1", "Ext. 4500", "Daily 14:00 - 17:00", None),
         # id=6: Mr. Alex Rivera (Media, Esports, Podcast TIC)
-        ("Mr. Alex Rivera", "rivera@school.edu", default_pw, "teacher", None, None, None, None, "Digital Media & Tech", "Innovation Hub 204", "Ext. 4888", "Tue-Thu 15:00 - 17:00", None),
+        ("Mr. Alex Rivera", "rivera@smamarsudirinibekasi.sch.id", default_pw, "teacher", None, None, None, None, "Digital Media & Tech", "Innovation Hub 204", "Ext. 4888", "Tue-Thu 15:00 - 17:00", None),
     ]
 
     for t in teachers:
@@ -193,16 +193,16 @@ def seed_demo_data(conn):
 
     # 3. Students
     students = [
-        # Alex Mercer (STU1001) - Homeroom Class 10-A (Teacher: Mr. David Chen id=3)
-        ("Alex Mercer", "alex.mercer@school.edu", default_pw, "student", "STU1001", "Grade 10", 3, class_10a_room_id),
-        # Maya Lin (STU1002) - Homeroom Class 10-A (Teacher: Mr. David Chen id=3)
-        ("Maya Lin", "maya.lin@school.edu", default_pw, "student", "STU1002", "Grade 10", 3, class_10a_room_id),
-        # Leo Tanaka (STU1003) - Homeroom Class 10-B (Teacher: Mrs. Sarah Jenkins id=4)
-        ("Leo Tanaka", "leo.tanaka@school.edu", default_pw, "student", "STU1003", "Grade 10", 4, class_10b_room_id),
-        # Chloe Bennett (STU1004) - Homeroom Class 10-B (Teacher: Mrs. Sarah Jenkins id=4)
-        ("Chloe Bennett", "chloe.bennett@school.edu", default_pw, "student", "STU1004", "Grade 10", 4, class_10b_room_id),
+        # Alex Mercer (NIS 252610112) - Homeroom Class 10-A (Teacher: Mr. David Chen id=3)
+        ("Alex Mercer", "252610112@smamarsudirinibekasi.sch.id", default_pw, "student", "252610112", "Grade 10", 3, class_10a_room_id),
+        # Maya Lin (NIS 252610113) - Homeroom Class 10-A (Teacher: Mr. David Chen id=3)
+        ("Maya Lin", "252610113@smamarsudirinibekasi.sch.id", default_pw, "student", "252610113", "Grade 10", 3, class_10a_room_id),
+        # Leo Tanaka (NIS 252610114) - Homeroom Class 10-B (Teacher: Mrs. Sarah Jenkins id=4)
+        ("Leo Tanaka", "252610114@smamarsudirinibekasi.sch.id", default_pw, "student", "252610114", "Grade 10", 4, class_10b_room_id),
+        # Chloe Bennett (NIS 252610115) - Homeroom Class 10-B (Teacher: Mrs. Sarah Jenkins id=4)
+        ("Chloe Bennett", "252610115@smamarsudirinibekasi.sch.id", default_pw, "student", "252610115", "Grade 10", 4, class_10b_room_id),
         # Admin User
-        ("System Admin", "admin@school.edu", default_pw, "admin", None, None, None, None)
+        ("System Admin", "admin@smamarsudirinibekasi.sch.id", default_pw, "admin", None, None, None, None)
     ]
 
     for s in students:

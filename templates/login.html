@@ -23,46 +23,50 @@
         <form action="{{ url_for('login') }}" method="POST">
             <div class="form-group">
                 <label class="form-label" for="loginEmail">
-                    Institutional Email Address
+                    Email Sekolah / NIS Siswa
                 </label>
-                <input type="email" name="email" class="form-input" placeholder="student@school.edu" required id="loginEmail" autocomplete="email">
+                <input type="text" name="email" class="form-input" placeholder="252610112@smamarsudirinibekasi.sch.id atau NIS" required id="loginEmail" autocomplete="username">
+                <span class="mono" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.35rem;">
+                    Siswa dapat login menggunakan NIS (contoh: 252610112) atau email lengkap.
+                </span>
             </div>
 
             <div class="form-group" style="margin-bottom: 2rem;">
                 <label class="form-label" for="loginPassword">
-                    Access Key / Password
+                    Kata Sandi / Password
                 </label>
                 <input type="password" name="password" class="form-input" placeholder="••••••••" required id="loginPassword" autocomplete="current-password">
             </div>
 
             <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1rem;">
-                Authenticate & Enter <i class="fas fa-arrow-right"></i>
+                Masuk ke EduReserve <i class="fas fa-arrow-right"></i>
             </button>
         </form>
 
         <div style="position: relative; text-align: center; margin: 2.5rem 0 2rem;">
             <div style="height: 1px; background: var(--border-subtle); position: absolute; top: 50%; left: 0; right: 0;"></div>
             <span class="mono" style="position: relative; background: #0f2c22; padding: 0 1rem; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em;">
-                Quick Demo Access
+                Akun Demo Cepat
             </span>
         </div>
 
         <!-- Quick Demo One-Click Selectors -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem;">
-            <button onclick="fillLogin('alex.mercer@school.edu', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
-                <i class="fas fa-user" style="color: var(--accent-mint); font-size: 0.75rem;"></i> Alex (Student)
+            <button onclick="fillLogin('252610112@smamarsudirinibekasi.sch.id', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
+                <i class="fas fa-user" style="color: var(--accent-mint); font-size: 0.75rem;"></i> Alex (252610112)
             </button>
-            <button onclick="fillLogin('leo.tanaka@school.edu', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
-                <i class="fas fa-user" style="color: var(--accent-mint); font-size: 0.75rem;"></i> Leo (Student)
+            <button onclick="fillLogin('252610114@smamarsudirinibekasi.sch.id', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
+                <i class="fas fa-user" style="color: var(--accent-mint); font-size: 0.75rem;"></i> Leo (252610114)
             </button>
-            <button onclick="fillLogin('chen@school.edu', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
-                <i class="fas fa-user-tie" style="color: var(--status-pending); font-size: 0.75rem;"></i> Mr. Chen (Teacher)
+            <button onclick="fillLogin('chen@smamarsudirinibekasi.sch.id', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
+                <i class="fas fa-user-tie" style="color: var(--status-pending); font-size: 0.75rem;"></i> Mr. Chen (Guru)
             </button>
-            <button onclick="fillLogin('thorne@school.edu', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
+            <button onclick="fillLogin('thorne@smamarsudirinibekasi.sch.id', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.78rem; padding: 0.65rem 0.85rem; justify-content: flex-start;">
                 <i class="fas fa-flask" style="color: var(--status-approved); font-size: 0.75rem;"></i> Dr. Thorne (TIC)
             </button>
         </div>
     </div>
+
 </div>
 
 <script>

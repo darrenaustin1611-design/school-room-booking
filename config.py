@@ -19,5 +19,6 @@ class Config:
     FACILITY_OPEN_TIME = "07:00"
     FACILITY_CLOSE_TIME = "20:00"
     
-    # Allowed email domain
-    SCHOOL_EMAIL_DOMAIN = "@school.edu"
+    # School Identity & Email domain
+    SCHOOL_NAME = "SMA Marsudirini Bekasi"
+    SCHOOL_EMAIL_DOMAIN = "@smamarsudirinibekasi.sch.id"

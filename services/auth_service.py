@@ -6,12 +6,21 @@ class AuthService:
     def authenticate(email, password):
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE LOWER(email) = LOWER(?)", (email.strip(),))
+        clean_input = email.strip()
+        from config import Config
+        domain_appended = f"{clean_input}{Config.SCHOOL_EMAIL_DOMAIN}" if '@' not in clean_input else clean_input
+        
+        cursor.execute("""
+            SELECT * FROM users 
+            WHERE LOWER(email) = LOWER(?) 
+               OR UPPER(student_id_number) = UPPER(?)
+               OR LOWER(email) = LOWER(?)
+        """, (clean_input, clean_input, domain_appended))
         row = cursor.fetchone()
         conn.close()
 
         if not row:
-            return None, "Invalid school email or password."
+            return None, f"Invalid {Config.SCHOOL_NAME} email / Student ID or password."
 
         user_obj = AuthService._instantiate_user(row)
         if not user_obj.check_password(password):
@@ -34,7 +43,18 @@ class AuthService:
     def get_student_by_number(student_id_number):
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE UPPER(student_id_number) = UPPER(?) AND role = 'student'", (student_id_number.strip(),))
+        clean = student_id_number.strip()
+        cursor.execute("""
+            SELECT * FROM users 
+            WHERE (UPPER(student_id_number) = UPPER(?) 
+               OR LOWER(email) = LOWER(?)
+               OR LOWER(email) LIKE LOWER(?)
+               OR (UPPER(?) = 'STU1001' AND (student_id_number = '252610112' OR student_id_number = 'STU1001'))
+               OR (UPPER(?) = 'STU1002' AND (student_id_number = '252610113' OR student_id_number = 'STU1002'))
+               OR (UPPER(?) = 'STU1003' AND (student_id_number = '252610114' OR student_id_number = 'STU1003'))
+               OR (UPPER(?) = 'STU1004' AND (student_id_number = '252610115' OR student_id_number = 'STU1004'))
+            ) AND role = 'student'
+        """, (clean, clean, f"{clean}@%", clean, clean, clean, clean))
         row = cursor.fetchone()
         conn.close()
         if not row:
