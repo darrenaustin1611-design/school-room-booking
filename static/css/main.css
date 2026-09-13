@@ -1,5 +1,5 @@
-/* ==========================================================================
-   EduReserve Design System — Living & Scroll-Driven Aesthetic
+﻿/* ==========================================================================
+   EduReserve Design System â€” Living & Scroll-Driven Aesthetic
    Inspired by why.zero.university & unitedcarriers.com
    Crafted with deep alpine forest emerald, luminous sage/mint lighting,
    scroll-linked parallax velocity physics, 3D inertia tilt, and living HUD.
@@ -501,13 +501,19 @@ p {
   position: relative;
   z-index: 1;
 }
+/* Wide-page override — only applied to the room detail page */
+body.wide-page .container { max-width: 1320px; }
+body.wide-page .navbar { max-width: 1320px; }
+body.wide-page .footer-container { max-width: 1320px; }
+body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
+
 
 /* ==========================================================================
    Scroll-Scrubbed Animation System (United Carriers Style)
    Elements animate proportionally to their scroll position
    ========================================================================== */
 
-/* Default state for scrub targets — they start hidden and transform in */
+/* Default state for scrub targets â€” they start hidden and transform in */
 .scrub-target {
   will-change: transform, opacity;
   transition: box-shadow 0.4s var(--ease-spring), border-color 0.4s var(--ease-spring);
@@ -761,7 +767,7 @@ p {
 
 .dashboard-dual-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: 1.8fr 1fr;
   gap: 2.5rem;
 }
 
@@ -968,6 +974,7 @@ p {
   text-transform: uppercase;
   color: var(--text-secondary);
   margin-bottom: 0.6rem;
+  white-space: nowrap;
 }
 
 .form-input, .form-select, .form-textarea {
@@ -1086,28 +1093,164 @@ p {
 }
 
 /* ==========================================================================
-   Footer
+   Cybernetic Observatory Footer
    ========================================================================== */
-footer {
+.cyber-footer {
   margin-top: auto;
-  border-top: 1px solid var(--border-subtle);
-  padding: 3rem 1.5rem;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.85rem;
+  border-top: 1px solid var(--border-glow);
+  background: linear-gradient(180deg, rgba(6, 21, 15, 0.7) 0%, rgba(10, 31, 23, 0.95) 100%);
+  backdrop-filter: var(--glass-backdrop);
+  -webkit-backdrop-filter: var(--glass-backdrop);
+  padding: 3.5rem 1.5rem 2rem;
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  box-shadow: 0 -20px 50px -10px rgba(0, 0, 0, 0.6);
 }
 
-footer a {
+.footer-container {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.footer-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 2.5rem;
+}
+
+.footer-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(14, 38, 29, 0.85);
+  border: 1px solid var(--border-card);
+  padding: 0.45rem 1.1rem;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
+.live-pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--status-approved);
+  box-shadow: 0 0 10px var(--status-approved);
+  animation: radarPulse 2s ease-in-out infinite;
+}
+
+@keyframes radarPulse {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 14px var(--status-approved); }
+  100% { transform: scale(0.9); opacity: 0.6; }
+}
+
+.back-to-top-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: rgba(16, 44, 34, 0.7);
+  border: 1px solid var(--border-card);
+  color: var(--text-primary);
+  padding: 0.5rem 1.25rem;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.3s var(--ease-spring);
+  backdrop-filter: blur(12px);
+}
+
+.back-to-top-btn:hover {
+  background: rgba(35, 88, 70, 0.85);
+  border-color: var(--border-glow);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(159, 227, 206, 0.3);
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 3rem;
+  margin-bottom: 2.8rem;
+}
+
+.footer-col-title {
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--accent-sage);
+  display: block;
+  margin-bottom: 1.1rem;
+}
+
+.footer-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.footer-links a {
   color: var(--text-secondary);
   text-decoration: none;
-  transition: color 0.2s ease;
+  font-size: 0.88rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  transition: all 0.25s ease;
 }
 
-footer a:hover {
-  color: var(--accent-mint);
+.footer-links a:hover {
+  color: #fff;
+  transform: translateX(4px);
 }
+
+.footer-info-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.info-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(8, 24, 18, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.info-chip i {
+  color: var(--accent-mint);
+  font-size: 0.8rem;
+}
+
+.footer-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 1.8rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+@media (max-width: 860px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .footer-status-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 
 /* ==========================================================================
    Responsive Adaptations
@@ -1139,3 +1282,9 @@ footer a:hover {
     gap: 1.5rem;
   }
 }
+
+/* Wide-page override - only applied to the room detail page */
+body.wide-page .container { max-width: 1320px; }
+body.wide-page .navbar { max-width: 1320px; }
+body.wide-page .footer-container { max-width: 1320px; }
+body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
