@@ -31,13 +31,23 @@
         </div>
 
         <div style="background: rgba(8, 24, 18, 0.45); border: 1px solid var(--border-subtle); padding: 1.25rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.88rem;">
+            {% if item.homeroom_classroom %}
+            <div style="margin-bottom: 0.35rem;">
+                <span class="badge badge-approved" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.8rem;">
+                    <i class="fas fa-chalkboard"></i> Wali Kelas: <strong>{{ item.homeroom_classroom }}</strong>
+                </span>
+            </div>
+            {% endif %}
             <div>
                 <i class="fas fa-envelope" style="color: var(--accent-mint); width: 22px;"></i>
                 <span style="color: var(--text-secondary);">Email:</span> <strong style="color: #ffffff;">{{ item.teacher.email }}</strong>
             </div>
             <div>
-                <i class="fas fa-phone" style="color: var(--accent-mint); width: 22px;"></i>
-                <span style="color: var(--text-secondary);">Phone:</span> <strong style="color: #ffffff;">{{ item.teacher.contact_phone }}</strong>
+                <i class="fab fa-whatsapp" style="color: #10b981; width: 22px;"></i>
+                <span style="color: var(--text-secondary);">WhatsApp:</span> 
+                <a href="https://wa.me/{{ item.clean_phone }}" target="_blank" style="color: #10b981; font-weight: 600; text-decoration: none;">
+                    {{ item.teacher.contact_phone }} <i class="fas fa-external-link-alt" style="font-size: 0.7rem;"></i>
+                </a>
             </div>
             <div>
                 <i class="fas fa-location-dot" style="color: var(--accent-mint); width: 22px;"></i>

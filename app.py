@@ -1,12 +1,14 @@
 import os
+import re
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
 from config import Config
 from database import init_db, get_db
 from services.auth_service import AuthService
 from services.room_service import RoomService
 from services.booking_service import BookingService
 from services.qr_service import QRService
+from services.excel_service import ExcelService
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -33,6 +35,9 @@ def dashboard():
     user = get_current_user()
     if not user:
         return redirect(url_for('login'))
+
+    if user.is_admin():
+        return redirect(url_for('admin_data_center'))
 
     conn = get_db()
     cursor = conn.cursor()
@@ -259,7 +264,24 @@ def teachers_directory():
         t_obj = AuthService._instantiate_user(tr)
         cursor.execute("SELECT * FROM rooms WHERE teacher_in_charge_id = ?", (t_obj.id,))
         m_rooms = [RoomService._instantiate_room(rm) for rm in cursor.fetchall()]
-        teacher_list.append({'teacher': t_obj, 'managed_rooms': m_rooms})
+
+        homeroom_room = None
+        if t_obj.assigned_homeroom_classroom_id:
+            cursor.execute("SELECT name FROM rooms WHERE id = ?", (t_obj.assigned_homeroom_classroom_id,))
+            hr_row = cursor.fetchone()
+            if hr_row:
+                homeroom_room = hr_row['name']
+
+        clean_p = re.sub(r'[^0-9]', '', t_obj.contact_phone or '')
+        if clean_p.startswith('0'):
+            clean_p = '62' + clean_p[1:]
+
+        teacher_list.append({
+            'teacher': t_obj, 
+            'managed_rooms': m_rooms,
+            'homeroom_classroom': homeroom_room,
+            'clean_phone': clean_p
+        })
 
     conn.close()
     return render_template('teachers.html', active_page='teachers', teacher_list=teacher_list)
@@ -344,6 +366,150 @@ def approval_action_api(booking_id):
         ok, msg = BookingService.reject_booking(booking_id, user.id, reason)
 
     return jsonify({'success': ok, 'message': msg})
+
+# --- Admin & Excel Sync Routes ---
+
+@app.route('/admin')
+@app.route('/admin/data')
+def admin_data_center():
+    user = get_current_user()
+    if not user or not user.is_admin():
+        flash("Akses terbatas untuk Administrator & Tata Usaha.", "error")
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # 1. Teachers with Homeroom and Managed Rooms
+    cursor.execute("SELECT * FROM users WHERE role = 'teacher' ORDER BY id ASC")
+    t_rows = cursor.fetchall()
+    teacher_data = []
+    for tr in t_rows:
+        t_obj = AuthService._instantiate_user(tr)
+        cursor.execute("SELECT * FROM rooms WHERE teacher_in_charge_id = ?", (t_obj.id,))
+        m_rooms = [RoomService._instantiate_room(rm) for rm in cursor.fetchall()]
+
+        homeroom_name = None
+        if t_obj.assigned_homeroom_classroom_id:
+            cursor.execute("SELECT name FROM rooms WHERE id = ?", (t_obj.assigned_homeroom_classroom_id,))
+            hr = cursor.fetchone()
+            if hr:
+                homeroom_name = hr['name']
+
+        clean_p = re.sub(r'[^0-9]', '', t_obj.contact_phone or '')
+        if clean_p.startswith('0'):
+            clean_p = '62' + clean_p[1:]
+
+        teacher_data.append({
+            'teacher': t_obj,
+            'managed_rooms': m_rooms,
+            'homeroom_name': homeroom_name,
+            'clean_phone': clean_p
+        })
+
+    # 2. Students with Homeroom Teacher
+    cursor.execute("SELECT * FROM users WHERE role = 'student' ORDER BY id ASC")
+    s_rows = cursor.fetchall()
+    student_data = []
+    for sr in s_rows:
+        s_obj = AuthService._instantiate_user(sr)
+        walas_obj = AuthService.get_user_by_id(s_obj.homeroom_teacher_id) if s_obj.homeroom_teacher_id else None
+
+        classroom_name = s_obj.grade_level
+        if s_obj.homeroom_classroom_id:
+            cursor.execute("SELECT name FROM rooms WHERE id = ?", (s_obj.homeroom_classroom_id,))
+            cr = cursor.fetchone()
+            if cr:
+                classroom_name = cr['name']
+
+        student_data.append({
+            'student': s_obj,
+            'walas': walas_obj,
+            'classroom_name': classroom_name
+        })
+
+    # 3. Rooms with TIC
+    cursor.execute("SELECT * FROM rooms ORDER BY id ASC")
+    r_rows = cursor.fetchall()
+    room_data = []
+    for rr in r_rows:
+        rm = RoomService._instantiate_room(rr)
+        tic = AuthService.get_user_by_id(rm.teacher_in_charge_id)
+        room_data.append({
+            'room': rm,
+            'tic': tic
+        })
+
+    conn.close()
+
+    return render_template('admin_data.html',
+                           active_page='admin_data',
+                           teachers=t_rows,
+                           teacher_data=teacher_data,
+                           students=s_rows,
+                           student_data=student_data,
+                           rooms=r_rows,
+                           room_data=room_data)
+
+@app.route('/admin/download-excel')
+def admin_download_excel():
+    user = get_current_user()
+    if not user or not user.is_admin():
+        flash("Akses terbatas untuk Administrator & Tata Usaha.", "error")
+        return redirect(url_for('login'))
+
+    buf = ExcelService.export_current_data_to_excel()
+    filename = f"Data_Sekolah_Marsudirini_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+    return send_file(
+        buf,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+@app.route('/admin/upload-excel', methods=['POST'])
+def admin_upload_excel():
+    user = get_current_user()
+    if not user or not user.is_admin():
+        flash("Akses terbatas untuk Administrator & Tata Usaha.", "error")
+        return redirect(url_for('login'))
+
+    if 'excel_file' not in request.files:
+        flash("Tidak ada file yang diunggah.", "error")
+        return redirect(url_for('admin_data_center'))
+
+    file = request.files['excel_file']
+    if file.filename == '':
+        flash("Silakan pilih file Excel terlebih dahulu.", "error")
+        return redirect(url_for('admin_data_center'))
+
+    if not file.filename.lower().endswith('.xlsx'):
+        flash("Format file harus berformat .xlsx (Microsoft Excel / Google Sheets).", "error")
+        return redirect(url_for('admin_data_center'))
+
+    result = ExcelService.import_excel_data(file.stream)
+    if result['success']:
+        flash(result['message'], 'success')
+        if result.get('errors'):
+            for err in result['errors']:
+                flash(f"Peringatan: {err}", 'warning')
+    else:
+        flash(result.get('message', 'Terjadi kesalahan saat memproses file Excel.'), 'error')
+
+    return redirect(url_for('admin_data_center'))
+
+@app.route('/quick-demo-login/<int:user_id>')
+def quick_demo_login(user_id):
+    u = AuthService.get_user_by_id(user_id)
+    if not u:
+        flash("Akun pengguna tidak ditemukan.", "error")
+        return redirect(url_for('login'))
+
+    session['user_id'] = u.id
+    flash(f"Berhasil beralih ke akun demo: {u.name} ({u.role.upper()})", "success")
+    if u.is_admin():
+        return redirect(url_for('admin_data_center'))
+    return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

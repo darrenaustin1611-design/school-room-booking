@@ -14,18 +14,17 @@ class Room:
         self.icon = icon
 
     def get_effective_tic_id(self, student=None):
-        """Returns the teacher ID responsible for approving bookings in this room."""
+        """Polymorphic method: returns the teacher ID responsible for approving bookings."""
         return self.teacher_in_charge_id
 
     def verify_qr_pin(self, pin):
         return str(self.qr_pin).strip() == str(pin).strip()
 
     def check_time_restriction(self, start_time_str):
-        """Validates after-hours restriction if applicable (e.g. classrooms after 15:30)."""
+        """Polymorphic method: validates time constraints before booking."""
         if not self.requires_after_hours_only:
             return True, None
         
-        # Check time string format "HH:MM"
         try:
             time_obj = datetime.strptime(start_time_str, "%H:%M").time()
             after_hours_cutoff = datetime.strptime("15:30", "%H:%M").time()
@@ -34,6 +33,10 @@ class Room:
         except ValueError:
             pass
         return True, None
+
+    def get_special_guidelines(self):
+        """Polymorphic method: returns room-specific usage rules and safety guidelines."""
+        return "Patuhi ketertiban umum dan jaga kebersihan fasilitas selama sesi penggunaan."
 
     def to_dict(self):
         return {
@@ -46,7 +49,8 @@ class Room:
             'qr_pin': self.qr_pin,
             'requires_after_hours_only': self.requires_after_hours_only,
             'description': self.description,
-            'icon': self.icon
+            'icon': self.icon,
+            'special_guidelines': self.get_special_guidelines()
         }
 
 
@@ -57,6 +61,10 @@ class ScienceLab(Room):
                          requires_after_hours_only=False, description=description, icon="flask")
         self.lab_type = lab_type # Physics, Chemistry, Biology, Language
         self.safety_guidelines = safety_guidelines
+
+    def get_special_guidelines(self):
+        # Polymorphic override for Science Laboratories
+        return f"Panduan Keselamatan Lab {self.lab_type}: {self.safety_guidelines} Wajib menggunakan jas lab dan kacamata pengaman jika diperlukan."
 
     def to_dict(self):
         data = super().to_dict()
@@ -74,6 +82,11 @@ class MediaRoom(Room):
                          requires_after_hours_only=False, description=description, icon="video")
         self.equipment_list = equipment_list
 
+    def get_special_guidelines(self):
+        # Polymorphic override for Media & Production Rooms
+        eq_str = ", ".join(self.equipment_list) if isinstance(self.equipment_list, list) else str(self.equipment_list)
+        return f"Peralatan Khusus: {eq_str}. Harap matikan seluruh perangkat audio/video dan pendingin ruangan setelah selesai."
+
     def to_dict(self):
         data = super().to_dict()
         data.update({'equipment_list': self.equipment_list})
@@ -86,6 +99,10 @@ class SportsFacility(Room):
                          teacher_in_charge_id=teacher_in_charge_id, qr_pin=qr_pin,
                          requires_after_hours_only=False, description=description, icon="trophy")
         self.court_type = court_type
+
+    def get_special_guidelines(self):
+        # Polymorphic override for Sports Facilities
+        return f"Area Olahraga ({self.court_type}): Wajib mengenakan pakaian & sepatu olahraga standar. Dilarang membawa makanan ke dalam lapangan."
 
     def to_dict(self):
         data = super().to_dict()
@@ -103,8 +120,23 @@ class Classroom(Room):
         self.grade_level = grade_level
 
     def get_effective_tic_id(self, student=None):
-        # Always assigned homeroom teacher of this classroom
+        # Polymorphic override: For a classroom, approval is routed to its assigned Homeroom Teacher
         return self.assigned_homeroom_teacher_id
+
+    def check_time_restriction(self, start_time_str):
+        # Polymorphic override: Enforce classroom after-hours rule (after 15:30)
+        try:
+            time_obj = datetime.strptime(start_time_str, "%H:%M").time()
+            after_hours_cutoff = datetime.strptime("15:30", "%H:%M").time()
+            if time_obj < after_hours_cutoff:
+                return False, "Classrooms can only be booked after school hours (Ruang kelas hanya dapat dipinjam setelah pukul 15:30)."
+        except ValueError:
+            pass
+        return True, None
+
+    def get_special_guidelines(self):
+        # Polymorphic override for Standard Classrooms
+        return f"Ruang Belajar {self.grade_level}: Hanya dapat dipinjam untuk kegiatan belajar kelompok setelah pukul 15:30 dengan persetujuan Wali Kelas."
 
     def to_dict(self):
         data = super().to_dict()

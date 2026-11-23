@@ -25,12 +25,25 @@ class User:
     def is_admin(self):
         return self.role == 'admin'
 
+    def get_role_display(self):
+        """Polymorphic method: returns human-readable role display string."""
+        return self.role.title()
+
+    def get_home_route(self):
+        """Polymorphic method: returns the designated landing route name."""
+        return 'dashboard'
+
+    def can_approve_booking(self, booking):
+        """Polymorphic method: determines if this user role can approve a booking."""
+        return False
+
     def to_dict(self):
         return {
             'id': self.id,
             'name': self.name,
             'email': self.email,
-            'role': self.role
+            'role': self.role,
+            'role_display': self.get_role_display()
         }
 
 
@@ -41,6 +54,18 @@ class Student(User):
         self.grade_level = grade_level
         self.homeroom_teacher_id = homeroom_teacher_id
         self.homeroom_classroom_id = homeroom_classroom_id
+
+    def get_role_display(self):
+        # Polymorphic override for Student
+        return f"Siswa ({self.grade_level})"
+
+    def get_home_route(self):
+        # Polymorphic override for Student landing page
+        return 'dashboard'
+
+    def can_approve_booking(self, booking):
+        # Students cannot approve bookings
+        return False
 
     def to_dict(self):
         data = super().to_dict()
@@ -65,6 +90,22 @@ class Teacher(User):
     def is_homeroom_teacher(self):
         return self.assigned_homeroom_classroom_id is not None
 
+    def get_role_display(self):
+        # Polymorphic override for Teacher
+        if self.is_homeroom_teacher():
+            return f"Wali Kelas ({self.department})"
+        return f"Guru Mata Pelajaran ({self.department})"
+
+    def get_home_route(self):
+        # Polymorphic override for Teacher landing page
+        return 'dashboard'
+
+    def can_approve_booking(self, booking):
+        # Polymorphic override: TIC can approve bookings for their assigned facility
+        if not booking:
+            return False
+        return booking.teacher_in_charge_id == self.id
+
     def to_dict(self):
         data = super().to_dict()
         data.update({
@@ -81,3 +122,15 @@ class Teacher(User):
 class Admin(User):
     def __init__(self, id, name, email, password_hash=None):
         super().__init__(id, name, email, role='admin', password_hash=password_hash)
+
+    def get_role_display(self):
+        # Polymorphic override for Admin
+        return "Administrator Sistem & Tata Usaha"
+
+    def get_home_route(self):
+        # Polymorphic override: Admin lands directly on the Data Center
+        return 'admin_data_center'
+
+    def can_approve_booking(self, booking):
+        # Polymorphic override: Admin has universal approval authority
+        return True

@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Data Center & Sync — EduReserve{% endblock %}
+
+{% block content %}
+<!-- Spacious Editorial Hero -->
+<div class="spacious-hero" style="margin-bottom: 2rem;">
+    <div>
+        <span class="mono-tag" style="margin-bottom: 0.6rem; background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: rgba(56, 189, 248, 0.25);">
+            ADMINISTRATION &bull; MASTER DATA REPOSITORY
+        </span>
+        <h1 class="spacious-hero-title">
+            Data Center & <em>Excel Sync</em>
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 1.05rem; margin-top: 0.5rem; max-width: 720px;">
+            Pusat kendali data sekolah. Kelola dan sinkronkan guru, wali kelas, PIC ruangan, fasilitas, dan siswa secara otomatis melalui file Excel (.xlsx).
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a href="{{ url_for('admin_download_excel') }}" class="btn btn-primary" style="background: #059669; border-color: #059669;">
+            <i class="fas fa-file-excel"></i> Download Excel Terkini
+        </a>
+    </div>
+</div>
+
+<!-- Key Performance Metrics -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid #38bdf8;">
+        <span class="mono" style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Guru & Staf</span>
+        <div style="font-size: 2.2rem; font-weight: 700; color: #ffffff; margin-top: 0.35rem;">{{ teachers|length }}</div>
+        <span style="font-size: 0.8rem; color: #38bdf8;"><i class="fas fa-chalkboard-teacher"></i> Terpetakan ke TIC & Walas</span>
+    </div>
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid #10b981;">
+        <span class="mono" style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Ruangan & Lab</span>
+        <div style="font-size: 2.2rem; font-weight: 700; color: #ffffff; margin-top: 0.35rem;">{{ rooms|length }}</div>
+        <span style="font-size: 0.8rem; color: #10b981;"><i class="fas fa-door-open"></i> 27 Kelas + 11 Fasilitas</span>
+    </div>
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid #a855f7;">
+        <span class="mono" style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Siswa Demo Terdaftar</span>
+        <div style="font-size: 2.2rem; font-weight: 700; color: #ffffff; margin-top: 0.35rem;">{{ students|length }}</div>
+        <span style="font-size: 0.8rem; color: #a855f7;"><i class="fas fa-user-graduate"></i> Kelas 11-B, 11-E, 11-I</span>
+    </div>
+    <div class="card" style="padding: 1.5rem; border-left: 4px solid #f59e0b;">
+        <span class="mono" style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Wali Kelas Aktif</span>
+        <div style="font-size: 2.2rem; font-weight: 700; color: #ffffff; margin-top: 0.35rem;">15</div>
+        <span style="font-size: 0.8rem; color: #f59e0b;"><i class="fas fa-user-shield"></i> Sinkron otomatis</span>
+    </div>
+</div>
+
+<!-- Excel Sync Hub -->
+<div class="card" style="padding: 2rem; margin-bottom: 2.5rem; background: linear-gradient(135deg, rgba(6, 44, 30, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); border: 1px solid rgba(56, 189, 248, 0.25);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; flex-wrap: wrap;">
+        <div style="max-width: 600px;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: #10b981;">
+                    <i class="fas fa-cloud-arrow-up" style="font-size: 1.2rem;"></i>
+                </div>
+                <h2 style="font-size: 1.5rem; color: #ffffff; margin: 0;">Sinkronisasi Otomatis via File Excel (.xlsx)</h2>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.94rem; line-height: 1.6;">
+                Anda dapat memperbarui seluruh data sekolah (guru, ruang kerja, nomor WhatsApp, PIC lab/ruangan, wali kelas, serta siswa) cukup dengan mengedit file spreadsheet dan mengunggahnya ke sini.
+            </p>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem; font-size: 0.82rem; color: var(--text-muted);">
+                <span><i class="fas fa-check-circle" style="color: #10b981;"></i> 3 Sheet: Guru_dan_Staf, Ruangan_dan_PIC, Siswa</span>
+                <span><i class="fas fa-check-circle" style="color: #10b981;"></i> Auto-mapping PIC & Wali Kelas</span>
+            </div>
+        </div>
+
+        <!-- Upload Form -->
+        <div style="background: rgba(15, 23, 42, 0.8); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 1.5rem; min-width: 320px; flex: 1; max-width: 480px;">
+            <form action="{{ url_for('admin_upload_excel') }}" method="POST" enctype="multipart/form-data">
+                <label style="display: block; margin-bottom: 0.6rem; font-weight: 600; font-size: 0.88rem; color: #ffffff;">
+                    Pilih File Excel (.xlsx)
+                </label>
+                <input type="file" name="excel_file" accept=".xlsx" required class="form-input" style="padding: 0.6rem; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.15); margin-bottom: 1rem; width: 100%;">
+                
+                <div style="display: flex; gap: 0.75rem;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">
+                        <i class="fas fa-upload"></i> Unggah & Sinkronkan
+                    </button>
+                    <a href="{{ url_for('admin_download_excel') }}" class="btn btn-secondary" title="Unduh Template Excel">
+                        <i class="fas fa-download"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Navigation Tabs -->
+<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+    <button onclick="switchTab('tab-teachers')" id="btn-tab-teachers" class="btn btn-secondary active" style="font-size: 0.88rem; border-color: var(--accent-mint); color: var(--accent-mint); white-space: nowrap; flex-shrink: 0;">
+        <i class="fas fa-user-tie"></i> Guru, PIC & Walas ({{ teachers|length }})
+    </button>
+    <button onclick="switchTab('tab-students')" id="btn-tab-students" class="btn btn-secondary" style="font-size: 0.88rem; white-space: nowrap; flex-shrink: 0;">
+        <i class="fas fa-user-graduate"></i> Siswa Demo ({{ students|length }})
+    </button>
+    <button onclick="switchTab('tab-rooms')" id="btn-tab-rooms" class="btn btn-secondary" style="font-size: 0.88rem; white-space: nowrap; flex-shrink: 0;">
+        <i class="fas fa-door-open"></i> Ruangan & Lab ({{ rooms|length }})
+    </button>
+</div>
+
+<!-- TAB 1: TEACHERS & PIC DIRECTORY -->
+<div id="tab-teachers" class="tab-content">
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 1.25rem 1.5rem; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.15rem; color: #ffffff; margin: 0;">
+                <i class="fas fa-address-book" style="color: var(--accent-mint); margin-right: 0.5rem;"></i>
+                Daftar Lengkap Guru, Penanggung Jawab (PIC) & Wali Kelas
+            </h3>
+            <span class="mono" style="font-size: 0.75rem; color: var(--text-muted);">PASSWORD SEMUA AKUN: password123</span>
+        </div>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                <thead>
+                    <tr style="background: rgba(15, 23, 42, 0.7); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
+                        <th style="padding: 1rem 1.25rem;">Guru / Pendidik</th>
+                        <th style="padding: 1rem 1.25rem;">Mata Pelajaran & Kantor</th>
+                        <th style="padding: 1rem 1.25rem;">Kontak WhatsApp / HP</th>
+                        <th style="padding: 1rem 1.25rem;">Wali Kelas (Homeroom)</th>
+                        <th style="padding: 1rem 1.25rem;">PIC Ruangan / Lab</th>
+                        <th style="padding: 1rem 1.25rem; text-align: right;">Aksi Demo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in teacher_data %}
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 1rem 1.25rem;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div class="user-avatar" style="width: 38px; height: 38px; font-size: 1rem;">
+                                    {{ item.teacher.name[0] }}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600; color: #ffffff;">{{ item.teacher.name }}</div>
+                                    <div class="mono" style="font-size: 0.75rem; color: var(--text-muted);">{{ item.teacher.email }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            <div style="color: #38bdf8; font-weight: 500;">{{ item.teacher.department }}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                                <i class="fas fa-location-dot" style="font-size: 0.7rem;"></i> {{ item.teacher.office_location }}
+                            </div>
+                            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.15rem;">
+                                <i class="fas fa-clock" style="font-size: 0.7rem;"></i> {{ item.teacher.office_hours }}
+                            </div>
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            <a href="https://wa.me/{{ item.clean_phone }}" target="_blank" class="badge badge-checkedin" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
+                                <i class="fab fa-whatsapp" style="color: #10b981;"></i> {{ item.teacher.contact_phone }}
+                            </a>
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            {% if item.homeroom_name %}
+                                <span class="badge badge-approved" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">
+                                    <i class="fas fa-chalkboard"></i> {{ item.homeroom_name }}
+                                </span>
+                            {% else %}
+                                <span class="mono" style="color: var(--text-muted); font-size: 0.75rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            {% if item.managed_rooms %}
+                                <div style="display: flex; flex-direction: column; gap: 0.3rem;">
+                                    {% for r in item.managed_rooms %}
+                                        <span style="font-size: 0.8rem; color: #fbbf24;">
+                                            <i class="fas fa-key" style="font-size: 0.7rem;"></i> {{ r.name }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="mono" style="color: var(--text-muted); font-size: 0.75rem;">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 1rem 1.25rem; text-align: right;">
+                            <a href="{{ url_for('quick_demo_login', user_id=item.teacher.id) }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
+                                <i class="fas fa-arrow-right-to-bracket"></i> Login Guru
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 2: STUDENTS DIRECTORY -->
+<div id="tab-students" class="tab-content" style="display: none;">
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 1.25rem 1.5rem; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.15rem; color: #ffffff; margin: 0;">
+                <i class="fas fa-user-graduate" style="color: var(--accent-mint); margin-right: 0.5rem;"></i>
+                Daftar Siswa Demo Terdaftar
+            </h3>
+            <span class="mono" style="font-size: 0.75rem; color: var(--text-muted);">PASSWORD SEMUA SISWA: password123</span>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                <thead>
+                    <tr style="background: rgba(15, 23, 42, 0.7); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
+                        <th style="padding: 1rem 1.25rem;">Nama Siswa</th>
+                        <th style="padding: 1rem 1.25rem;">NIS / Student ID</th>
+                        <th style="padding: 1rem 1.25rem;">Email Sekolah</th>
+                        <th style="padding: 1rem 1.25rem;">Kelas</th>
+                        <th style="padding: 1rem 1.25rem;">Guru Wali Kelas</th>
+                        <th style="padding: 1rem 1.25rem; text-align: right;">Aksi Demo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in student_data %}
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 1rem 1.25rem;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div class="user-avatar" style="width: 36px; height: 36px; font-size: 0.95rem; background: #059669;">
+                                    {{ item.student.name[0] }}
+                                </div>
+                                <strong style="color: #ffffff;">{{ item.student.name }}</strong>
+                            </div>
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            <span class="badge badge-checkedin mono">{{ item.student.student_id_number }}</span>
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            <span class="mono" style="color: var(--text-secondary);">{{ item.student.email }}</span>
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            <span class="badge badge-approved">{{ item.classroom_name }}</span>
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            {% if item.walas %}
+                                <div style="font-weight: 600; color: #ffffff;">{{ item.walas.name }}</div>
+                                <div style="font-size: 0.75rem; color: #38bdf8;">{{ item.walas.department }}</div>
+                            {% else %}
+                                <span class="mono" style="color: var(--text-muted);">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 1rem 1.25rem; text-align: right;">
+                            <a href="{{ url_for('quick_demo_login', user_id=item.student.id) }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
+                                <i class="fas fa-arrow-right-to-bracket"></i> Login Siswa
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 3: ROOMS & FACILITIES -->
+<div id="tab-rooms" class="tab-content" style="display: none;">
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 1.25rem 1.5rem; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.15rem; color: #ffffff; margin: 0;">
+                <i class="fas fa-door-open" style="color: var(--accent-mint); margin-right: 0.5rem;"></i>
+                Daftar Seluruh Fasilitas, Laboratorium & Ruang Kelas (38 Ruangan)
+            </h3>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                <thead>
+                    <tr style="background: rgba(15, 23, 42, 0.7); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
+                        <th style="padding: 1rem 1.25rem;">Nama Ruangan</th>
+                        <th style="padding: 1rem 1.25rem;">Kategori</th>
+                        <th style="padding: 1rem 1.25rem;">Kapasitas & Lokasi</th>
+                        <th style="padding: 1rem 1.25rem;">Guru Penanggung Jawab (PIC / TIC)</th>
+                        <th style="padding: 1rem 1.25rem;">PIN Check-in QR</th>
+                        <th style="padding: 1rem 1.25rem; text-align: right;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in room_data %}
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 1rem 1.25rem;">
+                            <div style="font-weight: 600; color: #ffffff;">{{ item.room.name }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">{{ item.room.description[:60] }}...</div>
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            <span class="badge badge-approved" style="font-size: 0.72rem; text-transform: uppercase;">{{ item.room.category.replace('_', ' ') }}</span>
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            <div style="color: #ffffff;"><i class="fas fa-users" style="color: var(--accent-mint); font-size: 0.75rem;"></i> {{ item.room.capacity }} Orang</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">{{ item.room.location }}</div>
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            {% if item.tic %}
+                                <div style="font-weight: 600; color: #ffffff;">{{ item.tic.name }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ item.tic.email }}</div>
+                            {% else %}
+                                <span class="mono" style="color: var(--text-muted);">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 1rem 1.25rem;">
+                            <span class="badge badge-checkedin mono" style="font-weight: 700; letter-spacing: 0.1em; color: #38bdf8;">{{ item.room.qr_pin }}</span>
+                        </td>
+                        <td style="padding: 1rem 1.25rem; text-align: right;">
+                            <a href="{{ url_for('room_detail', room_id=item.room.id) }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
+                                <i class="fas fa-eye"></i> Detail
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function switchTab(tabId) {
+    document.getElementById('tab-teachers').style.display = 'none';
+    document.getElementById('tab-students').style.display = 'none';
+    document.getElementById('tab-rooms').style.display = 'none';
+    
+    document.getElementById('btn-tab-teachers').style.borderColor = 'var(--border-subtle)';
+    document.getElementById('btn-tab-teachers').style.color = 'var(--text-secondary)';
+    document.getElementById('btn-tab-students').style.borderColor = 'var(--border-subtle)';
+    document.getElementById('btn-tab-students').style.color = 'var(--text-secondary)';
+    document.getElementById('btn-tab-rooms').style.borderColor = 'var(--border-subtle)';
+    document.getElementById('btn-tab-rooms').style.color = 'var(--text-secondary)';
+
+    document.getElementById(tabId).style.display = 'block';
+    
+    let activeBtn = document.getElementById('btn-' + tabId);
+    activeBtn.style.borderColor = 'var(--accent-mint)';
+    activeBtn.style.color = 'var(--accent-mint)';
+}
+</script>
+{% endblock %}

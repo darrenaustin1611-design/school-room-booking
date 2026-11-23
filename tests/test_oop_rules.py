@@ -18,13 +18,31 @@ class TestSchoolBookingOOPRules(unittest.TestCase):
                 pass
         init_db()
 
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM users WHERE role = 'student' ORDER BY id ASC")
+        self.students = cursor.fetchall()
+        cursor.execute("SELECT * FROM users WHERE role = 'teacher' ORDER BY id ASC")
+        self.teachers = cursor.fetchall()
+        cursor.execute("SELECT * FROM rooms WHERE category = 'classroom' ORDER BY id ASC")
+        self.classrooms = cursor.fetchall()
+        cursor.execute("SELECT * FROM rooms WHERE name LIKE '%Physics%'")
+        self.physics_lab = cursor.fetchone()
+        cursor.execute("SELECT * FROM rooms WHERE name LIKE '%Chemistry%'")
+        self.chem_lab = cursor.fetchone()
+        cursor.execute("SELECT * FROM rooms WHERE name LIKE '%Biology%'")
+        self.bio_lab = cursor.fetchone()
+        cursor.execute("SELECT * FROM rooms WHERE name LIKE '%Language%'")
+        self.lang_lab = cursor.fetchone()
+        conn.close()
 
     def test_single_active_booking_limit(self):
         """Rule Verification: Each student can only hold 1 active booking at a time."""
-        # Alex Mercer (id=7, STU1001) books Physics Lab (id=1)
+        stu1 = self.students[0]
+        # Student books Physics Lab
         booking1, err1 = BookingService.create_booking(
-            primary_student_id=7,
-            room_id=1,
+            primary_student_id=stu1['id'],
+            room_id=self.physics_lab['id'],
             booking_date="2026-09-10",
             start_time="16:00",
             end_time="17:00",
@@ -33,10 +51,10 @@ class TestSchoolBookingOOPRules(unittest.TestCase):
         self.assertIsNotNone(booking1, f"Booking 1 failed: {err1}")
         self.assertIsNone(err1)
 
-        # Alex tries to book another room (Chemistry Lab id=2) while booking1 is PENDING
+        # Student tries to book another room (Chemistry Lab) while booking1 is PENDING
         booking2, err2 = BookingService.create_booking(
-            primary_student_id=7,
-            room_id=2,
+            primary_student_id=stu1['id'],
+            room_id=self.chem_lab['id'],
             booking_date="2026-09-10",
             start_time="17:00",
             end_time="18:00",
@@ -47,10 +65,13 @@ class TestSchoolBookingOOPRules(unittest.TestCase):
 
     def test_co_booker_active_booking_block(self):
         """Rule Verification: Adding a student who already holds an active booking as a co-booker fails."""
-        # Student Maya Lin (id=8, STU1002) creates an active booking
+        stu1 = self.students[0]
+        stu2 = self.students[1]
+
+        # Student 1 creates an active booking
         b1, err1 = BookingService.create_booking(
-            primary_student_id=8,
-            room_id=3, # Biology Lab
+            primary_student_id=stu1['id'],
+            room_id=self.bio_lab['id'],
             booking_date="2026-09-11",
             start_time="16:00",
             end_time="17:00",
@@ -58,45 +79,45 @@ class TestSchoolBookingOOPRules(unittest.TestCase):
         )
         self.assertIsNotNone(b1)
 
-        # Student Leo Tanaka (id=9, STU1003) tries to create a booking adding Maya (STU1002) as co-booker
+        # Student 2 tries to create a booking adding Student 1 as co-booker
         b2, err2 = BookingService.create_booking(
-            primary_student_id=9,
-            room_id=4, # Language Lab
+            primary_student_id=stu2['id'],
+            room_id=self.lang_lab['id'],
             booking_date="2026-09-11",
             start_time="17:00",
             end_time="18:00",
             purpose="Language Group",
-            co_booker_student_numbers=["STU1002"]
+            co_booker_student_numbers=[stu1['student_id_number']]
         )
         self.assertIsNone(b2)
         self.assertIn("already has an active booking", err2)
 
     def test_classroom_homeroom_teacher_approval_routing(self):
         """Rule Verification: Classroom bookings route approval to the assigned classroom's Homeroom Teacher."""
-        # Class 10-A classroom (room_id=12) has homeroom teacher Mr. David Chen (teacher_id=3)
-        room = RoomService.get_room_by_id(12)
-        self.assertEqual(room.category, "classroom")
-        self.assertEqual(room.teacher_in_charge_id, 3)
-
-        # Student Leo Tanaka (homeroom teacher Mrs. Jenkins id=4) books Class 10-A
+        cls = self.classrooms[0] # First classroom
+        self.assertEqual(cls['category'], "classroom")
+        
+        stu = self.students[0]
         b, err = BookingService.create_booking(
-            primary_student_id=9, # Leo Tanaka
-            room_id=12,
+            primary_student_id=stu['id'],
+            room_id=cls['id'],
             booking_date="2026-09-12",
             start_time="16:00",
             end_time="17:00",
-            purpose="Group Study in 10-A"
+            purpose="Group Study in Classroom"
         )
         self.assertIsNotNone(b, err)
-        self.assertEqual(b.teacher_in_charge_id, 3) # Mr. Chen approves Class 10-A
-        self.assertEqual(b.homeroom_teacher_id, 4) # Mrs. Jenkins gets FYI
+        self.assertEqual(b.teacher_in_charge_id, cls['teacher_in_charge_id'])
+        self.assertEqual(b.homeroom_teacher_id, stu['homeroom_teacher_id'])
 
     def test_classroom_after_hours_restriction(self):
         """Rule Verification: Classrooms can only be booked after 15:30."""
-        # Try booking Class 10-A at 14:00 (during school hours)
+        cls = self.classrooms[0]
+        stu = self.students[0]
+        # Try booking classroom at 14:00 (during school hours)
         b, err = BookingService.create_booking(
-            primary_student_id=7,
-            room_id=12,
+            primary_student_id=stu['id'],
+            room_id=cls['id'],
             booking_date="2026-09-13",
             start_time="14:00",
             end_time="15:00",
@@ -107,9 +128,10 @@ class TestSchoolBookingOOPRules(unittest.TestCase):
 
     def test_grace_period_extension_confirm_coming(self):
         """Rule Verification: Confirming 'Yes I'm coming' extends grace period to +15 mins (total 30 mins)."""
+        stu = self.students[0]
         b, err = BookingService.create_booking(
-            primary_student_id=7,
-            room_id=1,
+            primary_student_id=stu['id'],
+            room_id=self.physics_lab['id'],
             booking_date="2026-09-14",
             start_time="16:00",
             end_time="17:00",
@@ -117,12 +139,12 @@ class TestSchoolBookingOOPRules(unittest.TestCase):
         )
         self.assertIsNotNone(b)
 
-        # Approve booking
-        ok, msg = BookingService.approve_booking(b.id, teacher_id=1)
+        # Approve booking by room's TIC
+        ok, msg = BookingService.approve_booking(b.id, teacher_id=b.teacher_in_charge_id)
         self.assertTrue(ok)
 
-        # Alex confirms coming
-        ok_conf, msg_conf = BookingService.confirm_coming(b.id, student_id=7)
+        # Student confirms coming
+        ok_conf, msg_conf = BookingService.confirm_coming(b.id, student_id=stu['id'])
         self.assertTrue(ok_conf)
 
         b_updated = BookingService.get_booking_by_id(b.id)

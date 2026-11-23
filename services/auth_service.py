@@ -49,12 +49,8 @@ class AuthService:
             WHERE (UPPER(student_id_number) = UPPER(?) 
                OR LOWER(email) = LOWER(?)
                OR LOWER(email) LIKE LOWER(?)
-               OR (UPPER(?) = 'STU1001' AND (student_id_number = '252610112' OR student_id_number = 'STU1001'))
-               OR (UPPER(?) = 'STU1002' AND (student_id_number = '252610113' OR student_id_number = 'STU1002'))
-               OR (UPPER(?) = 'STU1003' AND (student_id_number = '252610114' OR student_id_number = 'STU1003'))
-               OR (UPPER(?) = 'STU1004' AND (student_id_number = '252610115' OR student_id_number = 'STU1004'))
             ) AND role = 'student'
-        """, (clean, clean, f"{clean}@%", clean, clean, clean, clean))
+        """, (clean, clean, f"{clean}@%"))
         row = cursor.fetchone()
         conn.close()
         if not row:
