@@ -63,12 +63,10 @@ class TestSchoolBookingOOPRules(unittest.TestCase):
         self.assertIsNone(booking2)
         self.assertIn("already have an active booking", err2)
 
-    def test_co_booker_active_booking_block(self):
-        """Rule Verification: Adding a student who already holds an active booking as a co-booker fails."""
+    def test_start_and_finish_use_cycle(self):
+        """Rule Verification: Mulai Pakai and Selesai Pakai without QR/PIN for authorized student & admin."""
         stu1 = self.students[0]
-        stu2 = self.students[1]
-
-        # Student 1 creates an active booking
+        # Student creates booking
         b1, err1 = BookingService.create_booking(
             primary_student_id=stu1['id'],
             room_id=self.bio_lab['id'],
@@ -78,19 +76,22 @@ class TestSchoolBookingOOPRules(unittest.TestCase):
             purpose="Biology Revision"
         )
         self.assertIsNotNone(b1)
+        
+        # TIC approves booking
+        ok_app, _ = BookingService.approve_booking(b1.id, b1.teacher_in_charge_id)
+        self.assertTrue(ok_app)
 
-        # Student 2 tries to create a booking adding Student 1 as co-booker
-        b2, err2 = BookingService.create_booking(
-            primary_student_id=stu2['id'],
-            room_id=self.lang_lab['id'],
-            booking_date="2026-09-11",
-            start_time="17:00",
-            end_time="18:00",
-            purpose="Language Group",
-            co_booker_student_numbers=[stu1['student_id_number']]
-        )
-        self.assertIsNone(b2)
-        self.assertIn("already has an active booking", err2)
+        # Mulai Pakai (direct confirmation without PIN/QR)
+        ok_start, msg_start = BookingService.check_in(b1.id, stu1['id'])
+        self.assertTrue(ok_start, msg_start)
+        b_in_use = BookingService.get_booking_by_id(b1.id)
+        self.assertEqual(b_in_use.status, "CHECKED_IN")
+
+        # Selesai Pakai
+        ok_fin, msg_fin = BookingService.check_out(b1.id, stu1['id'])
+        self.assertTrue(ok_fin, msg_fin)
+        b_done = BookingService.get_booking_by_id(b1.id)
+        self.assertEqual(b_done.status, "COMPLETED")
 
     def test_classroom_homeroom_teacher_approval_routing(self):
         """Rule Verification: Classroom bookings route approval to the assigned classroom's Homeroom Teacher."""

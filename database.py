@@ -99,13 +99,12 @@ def init_db():
 
 def seed_demo_data(conn, force=False):
     cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*) FROM rooms WHERE category = 'classroom'")
+    classroom_count = cursor.fetchone()[0]
     cursor.execute("SELECT COUNT(*) FROM users")
     user_count = cursor.fetchone()[0]
-    if user_count > 0 and not force:
-        # Check if the new demo students already exist
-        cursor.execute("SELECT COUNT(*) FROM users WHERE student_id_number = '252610153'")
-        if cursor.fetchone()[0] > 0:
-            return # Already fully seeded with latest roster
+    if user_count > 0 and classroom_count == 9 and not force:
+        return # Already seeded with exactly 9 classrooms
 
     default_pw = security.generate_password_hash("password123")
 
@@ -140,28 +139,28 @@ def seed_demo_data(conn, force=False):
         # 7. FX. Budi Santoso, M.Si. (Wali Kelas 11-B)
         ("FX. Budi Santoso, M.Si.", "budisantoso@smamarsudirinibekasi.sch.id", default_pw, "teacher",
          "Kimia Terapan & Pembina OSIS", "Ruang Guru Pusat Lt. 2 (Meja 14)", "0813-8821-4402", "Senin - Jumat 14:00 - 16:00"),
-        # 8. Dra. Theresia Sri Rahayu (Wali Kelas 11-E)
+        # 8. Dra. Theresia Sri Rahayu (Wali Kelas 11-C)
         ("Dra. Theresia Sri Rahayu", "srirahayu@smamarsudirinibekasi.sch.id", default_pw, "teacher",
          "Biologi Terapan & Adiwiyata", "Ruang Guru Pusat Lt. 2 (Meja 08)", "0812-9934-5513", "Senin - Kamis 13:30 - 15:30"),
-        # 9. Antonius Hendra Setiawan, S.Pd. (Wali Kelas 11-I)
+        # 9. Antonius Hendra Setiawan, S.Pd. (Wali Kelas 11-A)
         ("Antonius Hendra Setiawan, S.Pd.", "hendrasetiawan@smamarsudirinibekasi.sch.id", default_pw, "teacher",
          "Fisika Modern & Pembina Robotika", "Ruang Guru Pusat Lt. 2 (Meja 22)", "0811-7723-9901", "Setiap Hari 15:00 - 16:30"),
-        # 10. Ignatius Wisnu Wardhana, S.Pd. (Wali Kelas 11-A)
+        # 10. Ignatius Wisnu Wardhana, S.Pd.
         ("Ignatius Wisnu Wardhana, S.Pd.", "wisnu@smamarsudirinibekasi.sch.id", default_pw, "teacher",
          "Sejarah Indonesia & Sosiologi", "Ruang Guru Pusat Lt. 1 (Meja 03)", "0812-3344-5566", "Senin & Rabu 14:30 - 16:00"),
-        # 11. Maria Fransisca Dewi, M.Pd. (Wali Kelas 11-C)
+        # 11. Maria Fransisca Dewi, M.Pd.
         ("Maria Fransisca Dewi, M.Pd.", "dewi@smamarsudirinibekasi.sch.id", default_pw, "teacher",
          "Bahasa & Sastra Indonesia", "Ruang Guru Pusat Lt. 1 (Meja 05)", "0813-4455-6677", "Selasa & Kamis 14:00 - 15:30"),
-        # 12. Yulius Eko Prasetyo, S.Kom. (Wali Kelas 11-D)
+        # 12. Yulius Eko Prasetyo, S.Kom.
         ("Yulius Eko Prasetyo, S.Kom.", "ekoprasetyo@smamarsudirinibekasi.sch.id", default_pw, "teacher",
          "Informatika & Coding AI", "Innovation Hub Lt. 1 (Ruang 102)", "0812-5566-7788", "Rabu - Jumat 15:00 - 16:30"),
-        # 13. Bernadetta Rini Lestari, S.Pd. (Wali Kelas 11-F)
+        # 13. Bernadetta Rini Lestari, S.Pd.
         ("Bernadetta Rini Lestari, S.Pd.", "rinilestari@smamarsudirinibekasi.sch.id", default_pw, "teacher",
          "Ekonomi & Akuntansi", "Ruang Guru Pusat Lt. 2 (Meja 18)", "0813-6677-8899", "Senin - Kamis 14:00 - 16:00"),
-        # 14. Stefanus Bagus Wicaksono, S.Pd. (Wali Kelas 11-G)
+        # 14. Stefanus Bagus Wicaksono, S.Pd.
         ("Stefanus Bagus Wicaksono, S.Pd.", "baguswicaksono@smamarsudirinibekasi.sch.id", default_pw, "teacher",
          "Geografi & Kebumian", "Ruang Guru Pusat Lt. 1 (Meja 12)", "0812-7788-9900", "Selasa & Jumat 14:30 - 16:00"),
-        # 15. Yohana Agnes Pratiwi, M.Pd. (Wali Kelas 11-H)
+        # 15. Yohana Agnes Pratiwi, M.Pd.
         ("Yohana Agnes Pratiwi, M.Pd.", "agnespratiwi@smamarsudirinibekasi.sch.id", default_pw, "teacher",
          "Seni Rupa & Desain Kreatif", "Sayap Seni Lt. 1 (Studio Seni)", "0813-8899-0011", "Senin - Rabu 15:00 - 16:30"),
     ]
@@ -204,34 +203,28 @@ def seed_demo_data(conn, force=False):
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', f)
 
-    # 3. Classrooms (Class 10-A to Class 12-I, total 27 classes)
+    # 3. Classrooms (Class 10-A to Class 12-C, exactly 3 classes per grade level = 9 classes total)
     # Homeroom Mapping:
-    # 10-A -> David Chen, 10-B -> Sarah Jenkins, 10-C -> Dr. Thorne, 10-D -> Dra. Elena
-    # 11-A -> Wisnu Wardhana, 11-B -> FX. Budi Santoso, 11-C -> Dewi, 11-D -> Eko Prasetyo
-    # 11-E -> Dra. Theresia Sri Rahayu, 11-F -> Rini Lestari, 11-G -> Bagus Wicaksono
-    # 11-H -> Agnes Pratiwi, 11-I -> Antonius Hendra Setiawan
-    # 12-A -> Coach Vance, 12-B -> Alex Rivera
+    # 10-A -> David Chen, 10-B -> Sarah Jenkins, 10-C -> Dr. Thorne
+    # 11-A -> Antonius Hendra Setiawan (Walas Darren Austin & Terrius Konstantine)
+    # 11-B -> FX. Budi Santoso (Walas Joe Mesiano Hoosan)
+    # 11-C -> Dra. Theresia Sri Rahayu (Walas Christiano Rafael Koroh)
+    # 12-A -> Coach Marcus Vance, 12-B -> Alex Rivera, 12-C -> Dra. Maria Elena Rostova
     homeroom_assignment_map = {
         "10-A": teacher_id_map["chen@smamarsudirinibekasi.sch.id"],
         "10-B": teacher_id_map["jenkins@smamarsudirinibekasi.sch.id"],
         "10-C": teacher_id_map["thorne@smamarsudirinibekasi.sch.id"],
-        "10-D": teacher_id_map["rostova@smamarsudirinibekasi.sch.id"],
-        "11-A": teacher_id_map["wisnu@smamarsudirinibekasi.sch.id"],
-        "11-B": teacher_id_map["budisantoso@smamarsudirinibekasi.sch.id"], # Walas for Joe Mesiano Hoosan
-        "11-C": teacher_id_map["dewi@smamarsudirinibekasi.sch.id"],
-        "11-D": teacher_id_map["ekoprasetyo@smamarsudirinibekasi.sch.id"],
-        "11-E": teacher_id_map["srirahayu@smamarsudirinibekasi.sch.id"],   # Walas for Christiano Rafael Koroh
-        "11-F": teacher_id_map["rinilestari@smamarsudirinibekasi.sch.id"],
-        "11-G": teacher_id_map["baguswicaksono@smamarsudirinibekasi.sch.id"],
-        "11-H": teacher_id_map["agnespratiwi@smamarsudirinibekasi.sch.id"],
-        "11-I": teacher_id_map["hendrasetiawan@smamarsudirinibekasi.sch.id"], # Walas for Darren Austin & Terrius Konstantine
+        "11-A": teacher_id_map["hendrasetiawan@smamarsudirinibekasi.sch.id"],
+        "11-B": teacher_id_map["budisantoso@smamarsudirinibekasi.sch.id"],
+        "11-C": teacher_id_map["srirahayu@smamarsudirinibekasi.sch.id"],
         "12-A": teacher_id_map["vance@smamarsudirinibekasi.sch.id"],
-        "12-B": teacher_id_map["rivera@smamarsudirinibekasi.sch.id"]
+        "12-B": teacher_id_map["rivera@smamarsudirinibekasi.sch.id"],
+        "12-C": teacher_id_map["rostova@smamarsudirinibekasi.sch.id"]
     }
 
     room_name_to_id = {}
     grades = ['10', '11', '12']
-    sections = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
+    sections = ['A', 'B', 'C']
 
     for g in grades:
         for s in sections:
@@ -254,23 +247,23 @@ def seed_demo_data(conn, force=False):
                 assigned_tid = homeroom_assignment_map[class_key]
                 cursor.execute("UPDATE users SET assigned_homeroom_classroom_id = ? WHERE id = ?", (room_id, assigned_tid))
 
-    # 4. Students (Using user's exact requested roster)
+    # 4. Students (Using user's exact requested roster, mapped to 11-A, 11-B, 11-C)
     students_data = [
         # Joe Mesiano Hoosan - Class 11-B (Wali Kelas: FX. Budi Santoso)
         ("Joe Mesiano Hoosan", "252610153@smamarsudirinibekasi.sch.id", default_pw, "252610153", "Grade 11",
          teacher_id_map["budisantoso@smamarsudirinibekasi.sch.id"], room_name_to_id["Class 11-B"]),
 
-        # Darren Austin Rinaldy - Class 11-I (Wali Kelas: Antonius Hendra Setiawan)
+        # Darren Austin Rinaldy - Class 11-A (Wali Kelas: Antonius Hendra Setiawan)
         ("Darren Austin Rinaldy", "252610112@smamarsudirinibekasi.sch.id", default_pw, "252610112", "Grade 11",
-         teacher_id_map["hendrasetiawan@smamarsudirinibekasi.sch.id"], room_name_to_id["Class 11-I"]),
+         teacher_id_map["hendrasetiawan@smamarsudirinibekasi.sch.id"], room_name_to_id["Class 11-A"]),
 
-        # Terrius Konstantine - Class 11-I (Wali Kelas: Antonius Hendra Setiawan)
+        # Terrius Konstantine - Class 11-A (Wali Kelas: Antonius Hendra Setiawan)
         ("Terrius Konstantine", "252610134@smamarsudirinibekasi.sch.id", default_pw, "252610134", "Grade 11",
-         teacher_id_map["hendrasetiawan@smamarsudirinibekasi.sch.id"], room_name_to_id["Class 11-I"]),
+         teacher_id_map["hendrasetiawan@smamarsudirinibekasi.sch.id"], room_name_to_id["Class 11-A"]),
 
-        # Christiano Rafael Koroh - Class 11-E (Wali Kelas: Dra. Theresia Sri Rahayu)
+        # Christiano Rafael Koroh - Class 11-C (Wali Kelas: Dra. Theresia Sri Rahayu)
         ("Christiano Rafael Koroh", "252610213@smamarsudirinibekasi.sch.id", default_pw, "252610213", "Grade 11",
-         teacher_id_map["srirahayu@smamarsudirinibekasi.sch.id"], room_name_to_id["Class 11-E"]),
+         teacher_id_map["srirahayu@smamarsudirinibekasi.sch.id"], room_name_to_id["Class 11-C"]),
     ]
 
     for s in students_data:

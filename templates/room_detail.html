@@ -85,16 +85,6 @@
                     <input type="text" name="purpose" class="form-input" placeholder="e.g. Robotics Team Fabrication / Physics Olympiad Study" required>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-users" style="color: var(--accent-mint); margin-right: 0.35rem;"></i> Group Members / Co-Bookers (Student IDs)
-                    </label>
-                    <input type="text" name="co_booker_ids" class="form-input" placeholder="e.g. STU1002, STU1003 (comma separated)">
-                    <small class="mono" style="color: var(--text-muted); font-size: 0.74rem; margin-top: 0.5rem; display: block;">
-                        Any listed co-booker can scan the door PIN upon arrival to authenticate the session.
-                    </small>
-                </div>
-
                 <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; margin-top: 1rem;">
                     <i class="fas fa-paper-plane"></i> Submit Reservation for Faculty Approval
                 </button>
@@ -152,21 +142,6 @@
             </div>
         </div>
         {% endif %}
-
-        <!-- Room Scannable PIN Poster -->
-        <div class="card" style="text-align: center; padding: 2.5rem 2rem;">
-            <span class="mono-tag" style="margin-bottom: 0.75rem;">CHECK-IN AUTHENTICATION</span>
-            <h3 style="font-size: 1.2rem; margin-bottom: 0.4rem;">Room Placard Code</h3>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
-                Scan QR or enter PIN when physically present at the entrance.
-            </p>
-
-            <img src="{{ qr_data.qr_image_url }}" alt="Room QR Code" style="width: 170px; height: 170px; border-radius: var(--radius-sm); border: 2px solid var(--border-glow); margin: 0 auto 1.5rem auto; display: block; background: white; padding: 6px;">
-            
-            <div class="mono" style="background: rgba(8, 24, 18, 0.85); border: 1px solid var(--border-card); padding: 0.75rem 1.25rem; border-radius: var(--radius-pill); font-size: 1.3rem; letter-spacing: 0.25em; font-weight: bold; color: var(--accent-mint); display: inline-block;">
-                PIN: {{ room.qr_pin }}
-            </div>
-        </div>
     </div>
 </div>
 {% endblock %}

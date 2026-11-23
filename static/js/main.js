@@ -319,34 +319,42 @@ function initModals() {
     });
 }
 
+function toggleUsage(bookingId, action) {
+    const isStart = action === 'start';
+    const msg = isStart 
+        ? "Konfirmasi: Mulai menggunakan ruangan ini sekarang?" 
+        : "Konfirmasi: Selesai menggunakan ruangan ini sekarang?";
+    
+    if (!confirm(msg)) return;
+
+    const endpoint = isStart 
+        ? `/api/bookings/${bookingId}/start-use` 
+        : `/api/bookings/${bookingId}/finish-use`;
+
+    fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            window.location.reload();
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Terjadi kesalahan saat menghubungi server.');
+    });
+}
+
 function openCheckInModal(bookingId, roomName) {
-    const modal = document.getElementById('qrCheckInModal');
-    if (!modal) return;
-    document.getElementById('modalBookingId').value = bookingId;
-    document.getElementById('modalRoomTitle').innerText = roomName;
-    const pinInput = document.getElementById('modalPinInput');
-    pinInput.value = '';
-    modal.classList.add('active');
-    setTimeout(() => pinInput.focus(), 150);
+    toggleUsage(bookingId, 'start');
 }
 
 function submitCheckIn() {
-    const bookingId = document.getElementById('modalBookingId').value;
-    const pin       = document.getElementById('modalPinInput').value;
-
-    if (!pin) {
-        alert('Please enter the 4-digit Room PIN displayed on the room door placard.');
-        return;
-    }
-
-    fetch(`/api/bookings/${bookingId}/check-in`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin })
-    })
-    .then(r => r.json())
-    .then(data => { alert(data.message); if (data.success) window.location.reload(); })
-    .catch(err => { console.error(err); alert('Error communicating with server.'); });
+    const bookingId = document.getElementById('modalBookingId')?.value;
+    if (bookingId) toggleUsage(bookingId, 'start');
 }
 
 function confirmComing(bookingId) {

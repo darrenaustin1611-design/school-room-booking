@@ -6,15 +6,27 @@ echo ===================================================
 
 cd /d "%~dp0"
 
-echo Checking Python...
-where python >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Python is not in PATH. Trying default install location...
-    set "PATH=%LOCALAPPDATA%\Programs\Python\Python312;%LOCALAPPDATA%\Programs\Python\Python312\Scripts;%PATH%"
+echo Detecting Python installation...
+set "PYTHON_CMD="
+
+if exist "%LOCALAPPDATA%\Python\bin\python.exe" (
+    set "PYTHON_CMD=%LOCALAPPDATA%\Python\bin\python.exe"
+) else if exist "%LOCALAPPDATA%\Programs\Python\Python312\python.exe" (
+    set "PYTHON_CMD=%LOCALAPPDATA%\Programs\Python\Python312\python.exe"
+) else if exist "%LOCALAPPDATA%\Programs\Python\Python311\python.exe" (
+    set "PYTHON_CMD=%LOCALAPPDATA%\Programs\Python\Python311\python.exe"
+) else (
+    where py >nul 2>&1
+    if not errorlevel 1 (
+        set "PYTHON_CMD=py"
+    ) else (
+        set "PYTHON_CMD=python"
+    )
 )
 
+echo Using Python: %PYTHON_CMD%
 echo Verifying dependencies...
-python -m pip install flask werkzeug requests --quiet
+"%PYTHON_CMD%" -m pip install flask werkzeug requests openpyxl --quiet
 
 echo.
 echo ===================================================
@@ -27,6 +39,6 @@ echo.
 :: Open browser after a 2-second delay so Flask server starts first
 start /b "" powershell -NoProfile -Command "Start-Sleep -Seconds 2; Start-Process 'http://127.0.0.1:5000'"
 
-python app.py
+"%PYTHON_CMD%" app.py
 pause
 

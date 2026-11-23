@@ -45,54 +45,15 @@ class BookingService:
             conn.close()
             return None, "Invalid time format. Use HH:MM."
 
-        # 3. Resolve Co-Bookers by Student ID Number
-        valid_co_bookers = []
-        if co_booker_student_numbers:
-            for num in co_booker_student_numbers:
-                clean_num = num.strip()
-                if not clean_num:
-                    continue
-                if clean_num.upper() == student.student_id_number.upper():
-                    continue # Skip primary student self-addition
-                
-                co_stu = AuthService.get_student_by_number(clean_num)
-                if not co_stu:
-                    conn.close()
-                    return None, f"Student ID '{clean_num}' not found in school database."
-                valid_co_bookers.append(co_stu)
-
-        # 4. STRICT RULE: Check if primary student OR any co-booker holds an active booking
+        # 3. Check if primary student holds an active booking (1 active booking limit)
         active_statuses = "('PENDING', 'APPROVED', 'CHECKED_IN', 'PENDING_CONFIRMATION')"
         
-        # Check primary student
         cursor.execute(f"SELECT id FROM bookings WHERE primary_student_id = ? AND status IN {active_statuses}", (primary_student_id,))
         if cursor.fetchone():
             conn.close()
             return None, "You already have an active booking. Students can only hold 1 active booking at a time."
 
-        # Also check if primary student is listed as a co-booker in an active booking
-        cursor.execute(f"SELECT id, co_booker_ids FROM bookings WHERE status IN {active_statuses}")
-        active_rows = cursor.fetchall()
-        for r in active_rows:
-            co_list = json.loads(r['co_booker_ids']) if r['co_booker_ids'] else []
-            if student.student_id_number in co_list or str(primary_student_id) in [str(x) for x in co_list]:
-                conn.close()
-                return None, "You are currently listed as a co-booker on an active booking. Only 1 active booking is allowed per student."
-
-        # Check all co-bookers
-        for cb in valid_co_bookers:
-            cursor.execute(f"SELECT id FROM bookings WHERE primary_student_id = ? AND status IN {active_statuses}", (cb.id,))
-            if cursor.fetchone():
-                conn.close()
-                return None, f"Co-booker {cb.name} ({cb.student_id_number}) already has an active booking."
-            
-            for r in active_rows:
-                co_list = json.loads(r['co_booker_ids']) if r['co_booker_ids'] else []
-                if cb.student_id_number in co_list or str(cb.id) in [str(x) for x in co_list]:
-                    conn.close()
-                    return None, f"Co-booker {cb.name} ({cb.student_id_number}) is listed on another active booking."
-
-        # 5. Check Room Schedule Overlap
+        # 4. Check Room Schedule Overlap
         cursor.execute(f"""
             SELECT id, start_time, end_time FROM bookings 
             WHERE room_id = ? AND booking_date = ? AND status IN {active_statuses}
@@ -110,18 +71,16 @@ class BookingService:
                 conn.close()
                 return None, f"Room '{room.name}' is already booked during {eb['start_time']} - {eb['end_time']} on {booking_date}."
 
-        # 6. Resolve Approval Routing
+        # 5. Resolve Approval Routing
         tic_id = room.get_effective_tic_id(student)
         homeroom_teacher_id = student.homeroom_teacher_id or tic_id
-
-        co_booker_ids_json = json.dumps([cb.student_id_number for cb in valid_co_bookers])
         now_str = datetime.now().isoformat()
 
         cursor.execute("""
             INSERT INTO bookings (primary_student_id, co_booker_ids, room_id, booking_date, start_time, end_time,
                                   purpose, teacher_in_charge_id, homeroom_teacher_id, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)
-        """, (primary_student_id, co_booker_ids_json, room_id, booking_date, start_time, end_time, purpose, tic_id, homeroom_teacher_id, now_str))
+            VALUES (?, '[]', ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)
+        """, (primary_student_id, room_id, booking_date, start_time, end_time, purpose, tic_id, homeroom_teacher_id, now_str))
 
         booking_id = cursor.lastrowid
 
@@ -183,6 +142,12 @@ class BookingService:
             rows = cursor.fetchall()
             conn.close()
             return [BookingService._instantiate_booking(r) for r in rows]
+
+        elif user.is_admin():
+            cursor.execute("SELECT * FROM bookings ORDER BY id DESC")
+            rows = cursor.fetchall()
+            conn.close()
+            return [BookingService._instantiate_booking(r) for r in rows]
             
         conn.close()
         return []
@@ -238,21 +203,25 @@ class BookingService:
         return True, "Booking request declined."
 
     @staticmethod
-    def check_in(booking_id, student_id, pin_input):
+    def check_in(booking_id, user_id, pin_input=None):
+        """Mulai Pakai: simple confirmation for primary student or admin without QR/PIN."""
         booking = BookingService.get_booking_by_id(booking_id)
         if not booking:
-            return False, "Booking not found."
+            return False, "Pemesanan tidak ditemukan."
 
-        student = AuthService.get_user_by_id(student_id)
-        if not student or not booking.is_authorized_student(student_id, getattr(student, 'student_id_number', None)):
-            return False, "You are not authorized to check in for this booking."
+        user = AuthService.get_user_by_id(user_id)
+        if not user:
+            return False, "Pengguna tidak valid."
+
+        is_authorized = (user.id == booking.primary_student_id) or user.is_admin()
+        if not is_authorized:
+            return False, "Anda tidak memiliki wewenang untuk memulai pemakaian ruangan ini."
 
         if booking.status not in [BookingStatus.APPROVED, BookingStatus.PENDING_CONFIRMATION]:
-            return False, f"Cannot check in. Booking status is {booking.status}."
+            return False, f"Tidak dapat memulai pemakaian. Status pemesanan: {booking.status}."
 
         room = RoomService.get_room_by_id(booking.room_id)
-        if not room or not room.verify_qr_pin(pin_input):
-            return False, "Invalid Room QR PIN Code. Please scan the official code inside the room."
+        room_name = room.name if room else "Ruangan"
 
         now_str = datetime.now().isoformat()
         conn = get_db()
@@ -260,24 +229,29 @@ class BookingService:
         cursor.execute("""
             UPDATE bookings SET status = 'CHECKED_IN', checked_in_at = ?, checked_in_by_student_id = ?
             WHERE id = ?
-        """, (now_str, student_id, booking_id))
+        """, (now_str, user_id, booking_id))
         conn.commit()
         conn.close()
 
-        return True, f"Check-in successful! Welcome to {room.name}."
+        return True, f"Ruangan {room_name} berhasil mulai digunakan!"
 
     @staticmethod
-    def check_out(booking_id, student_id):
+    def check_out(booking_id, user_id):
+        """Selesai Pakai: simple confirmation for primary student or admin."""
         booking = BookingService.get_booking_by_id(booking_id)
         if not booking:
-            return False, "Booking not found."
+            return False, "Pemesanan tidak ditemukan."
 
-        student = AuthService.get_user_by_id(student_id)
-        if not booking.is_authorized_student(student_id, getattr(student, 'student_id_number', None)):
-            return False, "Unauthorized to check out."
+        user = AuthService.get_user_by_id(user_id)
+        if not user:
+            return False, "Pengguna tidak valid."
+
+        is_authorized = (user.id == booking.primary_student_id) or user.is_admin()
+        if not is_authorized:
+            return False, "Anda tidak memiliki wewenang untuk menyelesaikan pemakaian ruangan ini."
 
         if booking.status != BookingStatus.CHECKED_IN:
-            return False, "Booking is not currently checked in."
+            return False, "Pemesanan belum atau tidak sedang digunakan."
 
         now_str = datetime.now().isoformat()
         conn = get_db()
@@ -288,7 +262,7 @@ class BookingService:
         conn.commit()
         conn.close()
 
-        return True, "Checked out successfully. Thank you for leaving the room clean!"
+        return True, "Pemakaian ruangan telah selesai. Terima kasih!"
 
     @staticmethod
     def confirm_coming(booking_id, student_id):

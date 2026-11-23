@@ -50,38 +50,28 @@
                 <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">FACULTY IN CHARGE</span>
                 <strong style="color: #ffffff; font-size: 0.98rem;">{{ item.tic.name if item.tic else 'Teacher' }}</strong>
             </div>
-            {% if item.booking.co_booker_ids %}
-            <div style="grid-column: 1 / -1; border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
-                <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">AUTHORIZED CO-BOOKERS</span>
-                <span class="mono" style="color: var(--accent-mint); font-size: 0.86rem;">
-                    <i class="fas fa-users" style="margin-right: 0.35rem;"></i> {{ item.booking.co_booker_ids | join(', ') }}
-                </span>
+            {% if current_user.is_admin() and item.student %}
+            <div>
+                <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">PEMINJAM (STUDENT)</span>
+                <strong style="color: #38bdf8; font-size: 0.98rem;">{{ item.student.name }} ({{ item.student.student_id_number }})</strong>
             </div>
             {% endif %}
         </div>
 
-        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
             {% if item.booking.status in ['APPROVED', 'PENDING_CONFIRMATION'] %}
-                <button onclick="openCheckInModal({{ item.booking.id }}, '{{ item.room.name }}')" class="btn btn-primary">
-                    <i class="fas fa-qrcode"></i> Check In With Room PIN
-                </button>
-            {% endif %}
-
-            {% if item.booking.status == 'PENDING_CONFIRMATION' %}
-                <button onclick="confirmComing({{ item.booking.id }})" class="btn btn-secondary" style="color: #fbbf24; border-color: rgba(251, 191, 36, 0.4);">
-                    <i class="fas fa-person-walking"></i> Confirm: On My Way (+15m)
+                <button onclick="toggleUsage({{ item.booking.id }}, 'start')" class="btn btn-primary" style="background: #10b981; border-color: #10b981; font-weight: 600;">
+                    <i class="fas fa-play"></i> Mulai Pakai
                 </button>
             {% endif %}
 
             {% if item.booking.status == 'CHECKED_IN' %}
+                <button onclick="toggleUsage({{ item.booking.id }}, 'finish')" class="btn btn-danger" style="background: #ef4444; border-color: #ef4444; font-weight: 600;">
+                    <i class="fas fa-stop"></i> Selesai Pakai
+                </button>
                 <button onclick="openExtensionModal({{ item.booking.id }})" class="btn btn-secondary">
                     <i class="fas fa-clock-rotate-left"></i> Request Extension
                 </button>
-                <form action="{{ url_for('check_out_booking', booking_id=item.booking.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-door-closed"></i> Check Out
-                    </button>
-                </form>
             {% endif %}
         </div>
     </div>
@@ -101,30 +91,6 @@
     </a>
 </div>
 {% endif %}
-
-<!-- QR PIN Check-in Modal -->
-<div class="modal-overlay" id="qrCheckInModal">
-    <div class="modal-card">
-        <span class="mono-tag" style="margin-bottom: 0.5rem;">SECURITY VERIFICATION</span>
-        <h2 style="font-size: 1.8rem; margin: 0.4rem 0 0.5rem;">Room Check-In</h2>
-        <p style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 1.75rem;">
-            Checking in for <strong id="modalRoomTitle" style="color: #ffffff;">Room</strong>. Enter the 4-digit PIN displayed on the room door placard.
-        </p>
-
-        <input type="hidden" id="modalBookingId">
-        <div class="form-group">
-            <label class="form-label" for="modalPinInput">4-Digit Security PIN</label>
-            <input type="text" id="modalPinInput" class="form-input mono" placeholder="••••" maxlength="6" style="font-size: 1.5rem; letter-spacing: 0.35em; text-align: center;">
-        </div>
-
-        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-            <button onclick="submitCheckIn()" class="btn btn-primary" style="flex: 1;">
-                <i class="fas fa-shield-check"></i> Verify & Check In
-            </button>
-            <button data-close-modal class="btn btn-secondary">Cancel</button>
-        </div>
-    </div>
-</div>
 
 <!-- Extension Modal -->
 <div class="modal-overlay" id="extensionModal">

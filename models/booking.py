@@ -47,14 +47,8 @@ class Booking:
         return self.status in [BookingStatus.PENDING, BookingStatus.APPROVED, BookingStatus.CHECKED_IN, BookingStatus.PENDING_CONFIRMATION]
 
     def is_authorized_student(self, student_id, student_number=None):
-        """Checks if a student is either the primary booker or a listed co-booker."""
-        if str(self.primary_student_id) == str(student_id):
-            return True
-        if student_number and student_number in self.co_booker_ids:
-            return True
-        if str(student_id) in [str(x) for x in self.co_booker_ids]:
-            return True
-        return False
+        """Checks if a student is the primary booker."""
+        return str(self.primary_student_id) == str(student_id)
 
     def get_allowed_grace_minutes(self):
         return 30 if self.grace_period_extended else 15

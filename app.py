@@ -172,9 +172,6 @@ def create_booking_route():
     start_time = request.form.get('start_time')
     end_time = request.form.get('end_time')
     purpose = request.form.get('purpose', '').strip()
-    co_bookers_raw = request.form.get('co_booker_ids', '').strip()
-
-    co_booker_numbers = [x.strip() for x in co_bookers_raw.split(',') if x.strip()] if co_bookers_raw else []
 
     booking, err = BookingService.create_booking(
         primary_student_id=user.id,
@@ -182,8 +179,7 @@ def create_booking_route():
         booking_date=booking_date,
         start_time=start_time,
         end_time=end_time,
-        purpose=purpose,
-        co_booker_student_numbers=co_booker_numbers
+        purpose=purpose
     )
 
     if err:
@@ -196,7 +192,7 @@ def create_booking_route():
 @app.route('/my-bookings')
 def my_bookings():
     user = get_current_user()
-    if not user or not user.is_student():
+    if not user or (not user.is_student() and not user.is_admin()):
         return redirect(url_for('login'))
 
     user_bookings = BookingService.get_user_bookings(user.id)
@@ -205,7 +201,8 @@ def my_bookings():
     for b in user_bookings:
         rm = RoomService.get_room_by_id(b.room_id)
         tic = AuthService.get_user_by_id(b.teacher_in_charge_id)
-        bookings_data.append({'booking': b, 'room': rm, 'tic': tic})
+        stu = AuthService.get_user_by_id(b.primary_student_id)
+        bookings_data.append({'booking': b, 'room': rm, 'tic': tic, 'student': stu})
 
     return render_template('my_bookings.html', active_page='my_bookings', bookings=bookings_data)
 
@@ -307,25 +304,28 @@ def qr_scanner_page(room_id):
 
 # --- API JSON Endpoints ---
 
+@app.route('/api/bookings/<int:booking_id>/start-use', methods=['POST'])
 @app.route('/api/bookings/<int:booking_id>/check-in', methods=['POST'])
-def check_in_api(booking_id):
+def start_use_api(booking_id):
     user = get_current_user()
     if not user:
         return jsonify({'success': False, 'message': 'Authentication required.'}), 401
     
-    data = request.get_json() or {}
-    pin = data.get('pin', '')
-    
-    ok, msg = BookingService.check_in(booking_id, user.id, pin)
+    ok, msg = BookingService.check_in(booking_id, user.id)
     return jsonify({'success': ok, 'message': msg})
 
+@app.route('/api/bookings/<int:booking_id>/finish-use', methods=['POST'])
 @app.route('/api/bookings/<int:booking_id>/check-out', methods=['POST'])
-def check_out_booking(booking_id):
+def finish_use_api(booking_id):
     user = get_current_user()
     if not user:
+        if request.is_json:
+            return jsonify({'success': False, 'message': 'Authentication required.'}), 401
         return redirect(url_for('login'))
 
     ok, msg = BookingService.check_out(booking_id, user.id)
+    if request.is_json:
+        return jsonify({'success': ok, 'message': msg})
     flash(msg, 'success' if ok else 'error')
     return redirect(url_for('my_bookings'))
 

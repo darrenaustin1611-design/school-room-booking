@@ -54,14 +54,6 @@
                     <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">INTENDED PURPOSE</span>
                     <span style="color: var(--text-secondary); font-size: 0.92rem;">{{ item.booking.purpose }}</span>
                 </div>
-                {% if item.booking.co_booker_ids %}
-                <div style="grid-column: 1 / -1; border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
-                    <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">DELEGATED CO-BOOKERS</span>
-                    <span class="mono" style="color: var(--accent-mint); font-size: 0.86rem;">
-                        <i class="fas fa-users" style="margin-right: 0.35rem;"></i> {{ item.booking.co_booker_ids | join(', ') }}
-                    </span>
-                </div>
-                {% endif %}
             </div>
 
             <div style="display: flex; gap: 1rem;">

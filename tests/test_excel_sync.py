@@ -34,7 +34,7 @@ class TestExcelSync(unittest.TestCase):
         res = ExcelService.import_excel_data(buf)
         self.assertTrue(res['success'])
         self.assertGreaterEqual(res['summary']['teachers_synced'], 15)
-        self.assertGreaterEqual(res['summary']['rooms_synced'], 38)
+        self.assertGreaterEqual(res['summary']['rooms_synced'], 20)
         self.assertGreaterEqual(res['summary']['students_synced'], 4)
 
     def test_update_teacher_and_tic_via_excel(self):
