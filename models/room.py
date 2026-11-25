@@ -1,4 +1,5 @@
 from datetime import datetime
+from config import Config
 
 class Room:
     def __init__(self, id, name, category, capacity, location, teacher_in_charge_id, qr_pin="1234", requires_after_hours_only=False, description="", icon="building"):
@@ -20,6 +21,10 @@ class Room:
     def verify_qr_pin(self, pin):
         return str(self.qr_pin).strip() == str(pin).strip()
 
+    @property
+    def booking_start_time(self):
+        return Config.CLASSROOM_AFTER_HOURS_START if self.requires_after_hours_only else "00:00"
+
     def check_time_restriction(self, start_time_str):
         """Polymorphic method: validates time constraints before booking."""
         if not self.requires_after_hours_only:
@@ -27,11 +32,11 @@ class Room:
         
         try:
             time_obj = datetime.strptime(start_time_str, "%H:%M").time()
-            after_hours_cutoff = datetime.strptime("15:30", "%H:%M").time()
+            after_hours_cutoff = datetime.strptime(self.booking_start_time, "%H:%M").time()
             if time_obj < after_hours_cutoff:
-                return False, "Classrooms can only be booked after school hours (after 15:30)."
+                return False, f"Classrooms can only be booked after school hours (from {self.booking_start_time})."
         except ValueError:
-            pass
+            return False, "Invalid time format. Use HH:MM."
         return True, None
 
     def get_special_guidelines(self):
@@ -123,20 +128,9 @@ class Classroom(Room):
         # Polymorphic override: For a classroom, approval is routed to its assigned Homeroom Teacher
         return self.assigned_homeroom_teacher_id
 
-    def check_time_restriction(self, start_time_str):
-        # Polymorphic override: Enforce classroom after-hours rule (after 15:30)
-        try:
-            time_obj = datetime.strptime(start_time_str, "%H:%M").time()
-            after_hours_cutoff = datetime.strptime("15:30", "%H:%M").time()
-            if time_obj < after_hours_cutoff:
-                return False, "Classrooms can only be booked after school hours (Ruang kelas hanya dapat dipinjam setelah pukul 15:30)."
-        except ValueError:
-            pass
-        return True, None
-
     def get_special_guidelines(self):
         # Polymorphic override for Standard Classrooms
-        return f"Ruang Belajar {self.grade_level}: Hanya dapat dipinjam untuk kegiatan belajar kelompok setelah pukul 15:30 dengan persetujuan Wali Kelas."
+        return f"Ruang Belajar {self.grade_level}: Hanya dapat dipinjam untuk kegiatan belajar kelompok mulai pukul {self.booking_start_time} dengan persetujuan Wali Kelas."
 
     def to_dict(self):
         data = super().to_dict()

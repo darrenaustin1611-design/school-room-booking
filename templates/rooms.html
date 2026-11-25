@@ -5,39 +5,53 @@
 {% block content %}
 <div class="spacious-hero">
     <div>
-        <span class="mono-tag" style="margin-bottom: 0.6rem;">
-            DIRECTORY OF CAMPUS ASSETS
-        </span>
         <h1 class="spacious-hero-title">
             Facilities & <em>Spaces</em>
         </h1>
         <p style="color: var(--text-secondary); font-size: 1.05rem; margin-top: 0.5rem; max-width: 600px;">
-            Explore specialized laboratories, creative studios, lecture halls, and academic rooms available for booking.
+            Find a school facility and check its schedule.
         </p>
     </div>
 </div>
 
+<form class="facility-search" action="{{ url_for('rooms_catalog') }}" method="GET" role="search">
+    <input type="hidden" name="category" value="{{ current_category }}">
+    <div>
+        <label for="facility-search" class="form-label">Find a facility</label>
+        <input type="search" id="facility-search" name="q" class="form-input" placeholder="Search by name or location" value="{{ search }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
 <!-- Floating Pill Category Filters -->
-<div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 3rem;">
-    <a href="{{ url_for('rooms_catalog', category='all') }}" class="btn {% if current_category == 'all' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
+<div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+    <a href="{{ url_for('rooms_catalog', category='all', q=search or None) }}" class="btn {% if current_category == 'all' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
         <i class="fas fa-border-all"></i> All Spaces
     </a>
-    <a href="{{ url_for('rooms_catalog', category='science_lab') }}" class="btn {% if current_category == 'science_lab' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
+    <a href="{{ url_for('rooms_catalog', category='science_lab', q=search or None) }}" class="btn {% if current_category == 'science_lab' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
         <i class="fas fa-flask"></i> Science Labs
     </a>
-    <a href="{{ url_for('rooms_catalog', category='media_room') }}" class="btn {% if current_category == 'media_room' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
+    <a href="{{ url_for('rooms_catalog', category='media_room', q=search or None) }}" class="btn {% if current_category == 'media_room' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
         <i class="fas fa-photo-film"></i> Media & Tech
     </a>
-    <a href="{{ url_for('rooms_catalog', category='sports_facility') }}" class="btn {% if current_category == 'sports_facility' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
+    <a href="{{ url_for('rooms_catalog', category='sports_facility', q=search or None) }}" class="btn {% if current_category == 'sports_facility' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
         <i class="fas fa-basketball"></i> Sports Courts
     </a>
-    <a href="{{ url_for('rooms_catalog', category='classroom') }}" class="btn {% if current_category == 'classroom' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
+    <a href="{{ url_for('rooms_catalog', category='classroom', q=search or None) }}" class="btn {% if current_category == 'classroom' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
         <i class="fas fa-chalkboard"></i> Academic Classrooms
     </a>
-    <a href="{{ url_for('rooms_catalog', category='event_space') }}" class="btn {% if current_category == 'event_space' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
+    <a href="{{ url_for('rooms_catalog', category='event_space', q=search or None) }}" class="btn {% if current_category == 'event_space' %}btn-primary{% else %}btn-secondary{% endif %}" style="font-size: 0.86rem; padding: 0.55rem 1.25rem;">
         <i class="fas fa-masks-theater"></i> Event Halls
     </a>
 </div>
+
+<p class="facility-results">
+    {{ room_items|length }} {{ 'facility' if room_items|length == 1 else 'facilities' }} found
+    {% if search %}for “{{ search }}” · <a href="{{ url_for('rooms_catalog', category=current_category) }}">Clear search</a>{% endif %}
+</p>
+{% if not room_items %}
+<p class="facility-results">Try a different search or choose another category. <a href="{{ url_for('rooms_catalog') }}">See all facilities</a></p>
+{% endif %}
 
 <!-- Spacious Room Cards Grid -->
 <div class="grid-cards">
@@ -48,7 +62,7 @@
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
                     <span class="badge badge-approved">{{ item.room.category.replace('_', ' ') }}</span>
                     {% if item.room.requires_after_hours_only %}
-                        <span class="badge badge-pending"><i class="fas fa-moon"></i> After 15:30</span>
+                        <span class="badge badge-pending"><i class="fas fa-moon"></i> From {{ item.room.booking_start_time }}</span>
                     {% endif %}
                 </div>
                 <h3 style="font-size: 1.6rem; margin-top: 0.5rem; color: #ffffff;">{{ item.room.name }}</h3>
@@ -57,10 +71,6 @@
                 <i class="fas fa-{{ item.room.icon }}"></i>
             </div>
         </div>
-
-        <p style="font-size: 0.94rem; color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6;">
-            {{ item.room.description }}
-        </p>
 
         <div style="background: rgba(8, 24, 18, 0.4); border: 1px solid var(--border-subtle); padding: 1.2rem; border-radius: var(--radius-sm); margin-bottom: 1.75rem; display: flex; flex-direction: column; gap: 0.6rem;">
             <div class="mono" style="font-size: 0.78rem; color: var(--text-secondary);">
@@ -78,7 +88,7 @@
 
         <div style="margin-top: auto;">
             <a href="{{ url_for('room_detail', room_id=item.room.id) }}" class="btn btn-primary" style="width: 100%;">
-                <i class="fas fa-calendar-alt"></i> View Schedule & Book
+                <i class="fas fa-calendar-alt" aria-hidden="true"></i> {{ 'Check availability & book' if current_user.is_student() else 'View room schedule' }}
             </a>
         </div>
     </div>

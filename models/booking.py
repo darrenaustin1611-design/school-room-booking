@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class BookingStatus:
     PENDING = 'PENDING'
@@ -38,7 +38,7 @@ class Booking:
         self.checked_out_at = checked_out_at
         self.grace_period_extended = bool(grace_period_extended)
         self.prompt_sent_at = prompt_sent_at
-        self.extension_status = extension_status # NONE, PENDING, APPROVED, REJECTED
+        self.extension_status = extension_status # NONE, PENDING, APPROVED, REJECTED, CANCELLED
         self.extension_minutes = extension_minutes
         self.created_at = created_at or datetime.now().isoformat()
 
@@ -52,6 +52,11 @@ class Booking:
 
     def get_allowed_grace_minutes(self):
         return 30 if self.grace_period_extended else 15
+
+    @property
+    def requested_extension_end_time(self):
+        current_end = datetime.strptime(self.end_time, '%H:%M')
+        return (current_end + timedelta(minutes=self.extension_minutes)).strftime('%H:%M')
 
     def to_dict(self):
         return {

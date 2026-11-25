@@ -112,15 +112,15 @@ class TestSchoolBookingOOPRules(unittest.TestCase):
         self.assertEqual(b.homeroom_teacher_id, stu['homeroom_teacher_id'])
 
     def test_classroom_after_hours_restriction(self):
-        """Rule Verification: Classrooms can only be booked after 15:30."""
+        """Rule Verification: Classrooms can only be booked from 14:30."""
         cls = self.classrooms[0]
         stu = self.students[0]
-        # Try booking classroom at 14:00 (during school hours)
+        # Reject a start one minute before classroom booking opens
         b, err = BookingService.create_booking(
             primary_student_id=stu['id'],
             room_id=cls['id'],
             booking_date="2026-09-13",
-            start_time="14:00",
+            start_time="14:29",
             end_time="15:00",
             purpose="Afternoon meeting"
         )

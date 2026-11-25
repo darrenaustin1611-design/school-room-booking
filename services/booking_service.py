@@ -1,10 +1,10 @@
 import json
+from contextlib import closing
 from datetime import datetime, timedelta
 from database import get_db
 from models import Booking, BookingStatus, Notification
 from services.room_service import RoomService
 from services.auth_service import AuthService
-from config import Config
 
 class BookingService:
     
@@ -29,7 +29,7 @@ class BookingService:
             conn.close()
             return None, msg
 
-        # 2. Validate Duration (Max 2 hours)
+        # 2. Validate that the booking ends after it starts on the same date
         try:
             fmt = "%H:%M"
             t1 = datetime.strptime(start_time, fmt)
@@ -38,15 +38,13 @@ class BookingService:
             if duration_minutes <= 0:
                 conn.close()
                 return None, "End time must be after start time."
-            if duration_minutes > Config.MAX_BOOKING_HOURS * 60:
-                conn.close()
-                return None, f"Booking duration cannot exceed {Config.MAX_BOOKING_HOURS} hours."
         except ValueError:
             conn.close()
             return None, "Invalid time format. Use HH:MM."
 
         # 3. Check if primary student holds an active booking (1 active booking limit)
         active_statuses = "('PENDING', 'APPROVED', 'CHECKED_IN', 'PENDING_CONFIRMATION')"
+        conn.execute("BEGIN IMMEDIATE")
         
         cursor.execute(f"SELECT id FROM bookings WHERE primary_student_id = ? AND status IN {active_statuses}", (primary_student_id,))
         if cursor.fetchone():
@@ -163,7 +161,10 @@ class BookingService:
 
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("UPDATE bookings SET status = 'APPROVED' WHERE id = ?", (booking_id,))
+        cursor.execute("UPDATE bookings SET status = 'APPROVED' WHERE id = ? AND status = 'PENDING'", (booking_id,))
+        if cursor.rowcount == 0:
+            conn.close()
+            return False, "No pending booking request to approve."
         
         now_str = datetime.now().isoformat()
         room = RoomService.get_room_by_id(booking.room_id)
@@ -190,7 +191,10 @@ class BookingService:
 
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("UPDATE bookings SET status = 'REJECTED' WHERE id = ?", (booking_id,))
+        cursor.execute("UPDATE bookings SET status = 'REJECTED' WHERE id = ? AND status = 'PENDING'", (booking_id,))
+        if cursor.rowcount == 0:
+            conn.close()
+            return False, "No pending booking request to decline."
         
         now_str = datetime.now().isoformat()
         cursor.execute("""
@@ -257,7 +261,9 @@ class BookingService:
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute("""
-            UPDATE bookings SET status = 'COMPLETED', checked_out_at = ? WHERE id = ?
+            UPDATE bookings SET status = 'COMPLETED', checked_out_at = ?,
+                extension_status = CASE WHEN extension_status = 'PENDING' THEN 'CANCELLED' ELSE extension_status END
+            WHERE id = ?
         """, (now_str, booking_id))
         conn.commit()
         conn.close()
@@ -286,72 +292,102 @@ class BookingService:
         return True, "Grace period extended by +15 minutes! Please scan the QR code upon arrival within 30 minutes of start time."
 
     @staticmethod
-    def request_extension(booking_id, student_id, extra_minutes):
-        booking = BookingService.get_booking_by_id(booking_id)
-        if not booking or booking.status != BookingStatus.CHECKED_IN:
-            return False, "Must be checked in to request a time extension."
-
-        student = AuthService.get_user_by_id(student_id)
-        if not booking.is_authorized_student(student_id, getattr(student, 'student_id_number', None)):
-            return False, "Unauthorized."
-
-        # Check if extended end time conflicts with another booking
-        current_end_dt = datetime.strptime(f"{booking.booking_date} {booking.end_time}", "%Y-%m-%d %H:%M")
-        new_end_dt = current_end_dt + timedelta(minutes=int(extra_minutes))
-        new_end_str = new_end_dt.strftime("%H:%M")
-
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT id FROM bookings 
-            WHERE room_id = ? AND booking_date = ? AND id != ? 
-            AND status IN ('PENDING', 'APPROVED', 'CHECKED_IN')
+    def _extension_conflicts(conn, booking, new_end_time):
+        return conn.execute("""
+            SELECT id FROM bookings
+            WHERE room_id = ? AND booking_date = ? AND id != ?
+            AND status IN ('PENDING', 'APPROVED', 'CHECKED_IN', 'PENDING_CONFIRMATION')
             AND start_time < ? AND end_time > ?
-        """, (booking.room_id, booking.booking_date, booking_id, new_end_str, booking.end_time))
+        """, (booking.room_id, booking.booking_date, booking.id, new_end_time, booking.end_time)).fetchone() is not None
 
-        if cursor.fetchone():
-            conn.close()
-            return False, "Extension unavailable: another student has booked the room for the subsequent slot."
+    @staticmethod
+    def request_extension(booking_id, student_id, extra_minutes):
+        try:
+            extra_minutes = int(extra_minutes)
+        except (ValueError, TypeError, OverflowError):
+            return False, "Choose a valid extension duration."
+        if not 0 < extra_minutes < 1440:
+            return False, "Choose a positive extension duration within the same date."
 
-        cursor.execute("""
-            UPDATE bookings SET extension_status = 'PENDING', extension_minutes = ? WHERE id = ?
-        """, (extra_minutes, booking_id))
+        with closing(get_db()) as conn, conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,)).fetchone()
+            if not row or row['status'] != BookingStatus.CHECKED_IN:
+                return False, "Must be checked in to request a time extension."
 
-        now_str = datetime.now().isoformat()
-        cursor.execute("""
-            INSERT INTO notifications (user_id, title, message, type, booking_id, created_at)
-            VALUES (?, 'Extension Request', ?, 'APPROVAL_REQUEST', ?, ?)
-        """, (booking.teacher_in_charge_id, f"Student requested +{extra_minutes} mins extension for booking #{booking_id}.", booking_id, now_str))
+            booking = BookingService._instantiate_booking(row)
+            if not booking.is_authorized_student(student_id):
+                return False, "Unauthorized."
+            if booking.extension_status == 'PENDING':
+                return False, "An extension request is already awaiting approval."
 
-        conn.commit()
-        conn.close()
+            current_end = datetime.strptime(f"{booking.booking_date} {booking.end_time}", "%Y-%m-%d %H:%M")
+            new_end = current_end + timedelta(minutes=extra_minutes)
+            if new_end.date() != current_end.date():
+                return False, "Booking extensions must end on the same date."
+            new_end_time = new_end.strftime("%H:%M")
+            if BookingService._extension_conflicts(conn, booking, new_end_time):
+                return False, "Extension unavailable: another student has booked the room for the subsequent slot."
+
+            conn.execute("""
+                UPDATE bookings SET extension_status = 'PENDING', extension_minutes = ? WHERE id = ?
+            """, (extra_minutes, booking_id))
+            conn.execute("""
+                INSERT INTO notifications (user_id, title, message, type, booking_id, created_at)
+                VALUES (?, 'Extension Request', ?, 'APPROVAL_REQUEST', ?, ?)
+            """, (booking.teacher_in_charge_id,
+                  f"Student requested +{extra_minutes} mins extension for booking #{booking_id}.",
+                  booking_id, datetime.now().isoformat()))
+
         return True, f"Extension request (+{extra_minutes} mins) sent to Teacher-in-Charge!"
 
     @staticmethod
     def approve_extension(booking_id, teacher_id):
-        booking = BookingService.get_booking_by_id(booking_id)
-        if not booking or booking.teacher_in_charge_id != teacher_id:
-            return False, "Unauthorized."
+        return BookingService._decide_extension(booking_id, teacher_id, approve=True)
 
-        current_end_dt = datetime.strptime(f"{booking.booking_date} {booking.end_time}", "%Y-%m-%d %H:%M")
-        new_end_dt = current_end_dt + timedelta(minutes=booking.extension_minutes)
-        new_end_str = new_end_dt.strftime("%H:%M")
+    @staticmethod
+    def reject_extension(booking_id, teacher_id, reason="No reason provided"):
+        return BookingService._decide_extension(booking_id, teacher_id, approve=False, reason=reason)
 
-        conn = get_db()
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE bookings SET end_time = ?, extension_status = 'APPROVED' WHERE id = ?
-        """, (new_end_str, booking_id))
-        
-        now_str = datetime.now().isoformat()
-        cursor.execute("""
-            INSERT INTO notifications (user_id, title, message, type, booking_id, created_at)
-            VALUES (?, 'Extension Approved!', ?, 'STATUS_UPDATE', ?, ?)
-        """, (booking.primary_student_id, f"Your extension for +{booking.extension_minutes} mins was approved. New end time: {new_end_str}", booking_id, now_str))
+    @staticmethod
+    def _decide_extension(booking_id, teacher_id, approve, reason=""):
+        with closing(get_db()) as conn, conn:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,)).fetchone()
+            if not row or row['teacher_in_charge_id'] != teacher_id:
+                return False, "Unauthorized."
+            booking = BookingService._instantiate_booking(row)
+            if booking.status != BookingStatus.CHECKED_IN or booking.extension_status != 'PENDING':
+                return False, "No pending extension request for this active booking."
 
-        conn.commit()
-        conn.close()
-        return True, f"Approved! Booking extended to {new_end_str}."
+            if approve:
+                if not 0 < booking.extension_minutes < 1440:
+                    return False, "The requested duration is invalid."
+                current_end = datetime.strptime(f"{booking.booking_date} {booking.end_time}", "%Y-%m-%d %H:%M")
+                new_end = current_end + timedelta(minutes=booking.extension_minutes)
+                if new_end.date() != current_end.date():
+                    return False, "Booking extensions must end on the same date."
+                new_end_time = new_end.strftime("%H:%M")
+                if BookingService._extension_conflicts(conn, booking, new_end_time):
+                    return False, "Cannot approve extension: the requested time is no longer available."
+                conn.execute("""
+                    UPDATE bookings SET end_time = ?, extension_status = 'APPROVED' WHERE id = ?
+                """, (new_end_time, booking_id))
+                title = "Extension Approved!"
+                message = f"Your extension for +{booking.extension_minutes} mins was approved. New end time: {new_end_time}."
+                result = f"Approved! Booking extended to {new_end_time}."
+            else:
+                conn.execute("UPDATE bookings SET extension_status = 'REJECTED' WHERE id = ?", (booking_id,))
+                title = "Extension Declined"
+                message = f"Your extension request was declined. Reason: {reason or 'No reason provided'}. Your booking still ends at {booking.end_time}."
+                result = "Extension declined. Original booking end time retained."
+
+            conn.execute("""
+                INSERT INTO notifications (user_id, title, message, type, booking_id, created_at)
+                VALUES (?, ?, ?, 'STATUS_UPDATE', ?, ?)
+            """, (booking.primary_student_id, title, message, booking_id, datetime.now().isoformat()))
+
+        return True, result
 
     @staticmethod
     def _instantiate_booking(row):

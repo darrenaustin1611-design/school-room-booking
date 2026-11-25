@@ -4,13 +4,49 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     initModals();
+    initBookingTimes();
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     initAmbientSpotlight();
-    initAmbientParticleCanvas();
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+        initAmbientParticleCanvas();
+    }
     initScrollPhysics();
     initRevealAnimations();  // Replaces broken scroll-scrub
     initCounterRollups();
     initHorizontalSlideIns();
 });
+
+function initBookingTimes() {
+    const form = document.querySelector('[data-booking-form]');
+    if (!form) return;
+
+    const availableWindows = JSON.parse(form.querySelector('[data-available-windows]').textContent);
+    const start = form.elements.start_time;
+    const end = form.elements.end_time;
+    const duration = form.querySelector('#booking-duration');
+    const toMinutes = time => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
+
+    function updateTimes() {
+        const period = availableWindows.find(period => start.value >= period.start && start.value < period.end);
+        start.setCustomValidity(start.value && !period ? 'Choose a start time within an available period.' : '');
+        end.disabled = !period;
+        const validEnd = period && end.value && end.value > start.value && end.value <= period.end;
+        end.setCustomValidity(period && end.value && !validEnd ? 'Choose an end time after the start, within the same available period.' : '');
+        end.max = period ? period.end : '';
+        let message = duration.dataset.default;
+        if (validEnd) {
+            message = (toMinutes(end.value) - toMinutes(start.value)) + ' minutes (' + start.value + ' to ' + end.value + ')';
+        } else if (period) {
+            message = 'Choose an end time up to ' + period.end + '.';
+        }
+        if (duration.textContent !== message) duration.textContent = message;
+    }
+
+    start.addEventListener('input', updateTimes);
+    end.addEventListener('input', updateTimes);
+    window.addEventListener('pageshow', updateTimes);
+    updateTimes();
+}
 
 /* ==========================================================================
    1. Scroll Physics — Progress Bar, HUD Telemetry, Navbar Shrink
@@ -392,7 +428,7 @@ function submitExtension() {
 
 function handleApproval(bookingId, action) {
     let reason = '';
-    if (action === 'REJECT') {
+    if (action === 'REJECT' || action === 'REJECT_EXTENSION') {
         reason = prompt("Please enter a brief reason for declining this request:") || "Time conflict or administrative choice";
     }
 

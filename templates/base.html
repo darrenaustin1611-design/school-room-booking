@@ -22,7 +22,7 @@
 
     <!-- Floating Pill Navigation Bar -->
     <div class="navbar-wrapper" id="navbar-wrapper">
-        <header class="navbar">
+        <header class="navbar{% if current_user %} navbar--signed-in{% endif %}">
             <a href="{{ url_for('dashboard') }}" class="brand">
                 <div class="brand-icon">
                     <i class="fas fa-landmark"></i>
@@ -34,32 +34,18 @@
             </a>
 
             {% if current_user %}
-            <div class="nav-right-cluster">
-                <div class="user-badge">
-                    <div class="user-avatar">
-                        {{ current_user.name[0] }}
-                    </div>
-                    <div class="user-info-text">
-                        <span class="user-name-text">{{ current_user.name }}</span>
-                        <span class="mono user-role-text">{{ current_user.role }}</span>
-                    </div>
-                    <a href="{{ url_for('logout') }}" class="user-logout-link" title="Keluar">
-                        <i class="fas fa-arrow-right-from-bracket"></i>
-                    </a>
-                </div>
-
-                <!-- Mobile Hamburger Toggle Button -->
-                <button class="mobile-toggle-btn" id="mobileMenuBtn" aria-label="Buka Menu Navigasi" onclick="toggleMobileMenu()">
-                    <i class="fas fa-bars" id="mobileMenuIcon"></i>
-                </button>
-            </div>
+            <button type="button" class="mobile-toggle-btn" id="mobileMenuBtn" aria-label="Menu navigasi" aria-controls="navLinksMenu" aria-expanded="false" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars" id="mobileMenuIcon" aria-hidden="true"></i>
+            </button>
 
             <ul class="nav-links" id="navLinksMenu">
+                {% if not current_user.is_admin() %}
                 <li>
                     <a href="{{ url_for('dashboard') }}" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">
                         <i class="fas fa-compass"></i> Overview
                     </a>
                 </li>
+                {% endif %}
                 <li>
                     <a href="{{ url_for('rooms_catalog') }}" class="nav-link {% if active_page == 'rooms' %}active{% endif %}">
                         <i class="fas fa-layer-group"></i> Facilities
@@ -88,13 +74,18 @@
                     </a>
                 </li>
 
-                {% if current_user.is_admin() %}
+                {% if current_user.is_admin() and active_page != 'admin_data' %}
                 <li>
-                    <a href="{{ url_for('admin_data_center') }}" class="nav-link {% if active_page == 'admin_data' %}active{% endif %}" style="color: #38bdf8;">
+                    <a href="{{ url_for('admin_data_center') }}" class="nav-link">
                         <i class="fas fa-database"></i> Data Center
                     </a>
                 </li>
                 {% endif %}
+                <li>
+                    <a href="{{ url_for('logout') }}" class="nav-link nav-link--logout">
+                        <i class="fas fa-arrow-right-from-bracket" aria-hidden="true"></i> Keluar
+                    </a>
+                </li>
             </ul>
             {% endif %}
         </header>
@@ -116,88 +107,21 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- High-Tech Glassmorphic Observatory Footer -->
-    <footer class="cyber-footer">
-        <div class="footer-container">
-            <!-- Top Footer Bar: Campus Status & Back to Top -->
-            <div class="footer-status-row">
-                <div class="footer-status-badge">
-                    <span class="live-pulse"></span>
-                    <span class="mono" style="font-size: 0.76rem; color: var(--accent-mint); letter-spacing: 0.06em;">
-                        SMA MARSUDIRINI BEKASI &bull; CORE ONLINE
-                    </span>
-                </div>
-
-                <!-- Smooth Scroll Back to Top Button -->
-                <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="back-to-top-btn" aria-label="Back to Top">
-                    <span class="mono" style="font-size: 0.74rem; letter-spacing: 0.08em;">RETURN TO APEX</span>
-                    <i class="fas fa-arrow-up"></i>
-                </button>
-            </div>
-
-            <!-- Middle Columns -->
-            <div class="footer-grid">
-                <div>
-                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.8rem;">
-                        <div class="brand-icon" style="width: 32px; height: 32px; font-size: 0.9rem;">
-                            <i class="fas fa-landmark"></i>
-                        </div>
-                        <span style="font-family: 'Newsreader', serif; font-size: 1.4rem; color: #fff;">EduReserve</span>
-                    </div>
-                    <p style="font-size: 0.86rem; color: var(--text-secondary); line-height: 1.6;">
-                        Next-generation facility allocation and space reservation infrastructure for SMA Marsudirini Bekasi faculty and students.
-                    </p>
-                </div>
-
-                <div class="footer-col">
-                    <span class="mono footer-col-title">NAVIGATION</span>
-                    <ul class="footer-links">
-                        <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-compass"></i> Dashboard Overview</a></li>
-                        <li><a href="{{ url_for('rooms_catalog') }}"><i class="fas fa-border-all"></i> Facilities & Spaces</a></li>
-                        <li><a href="{{ url_for('teachers_directory') }}"><i class="fas fa-users-rectangle"></i> Faculty Directory</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-col">
-                    <span class="mono footer-col-title">CAMPUS PROTOCOLS</span>
-                    <div class="footer-info-chips">
-                        <span class="info-chip"><i class="fas fa-shield-halved"></i> 2-Hour Maximum Cap</span>
-                        <span class="info-chip"><i class="fas fa-qrcode"></i> Door PIN Check-In</span>
-                        <span class="info-chip"><i class="fas fa-clock"></i> Classrooms After 15:30</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bottom Sub-Footer Bar -->
-            <div class="footer-bottom-bar">
-                <span class="mono" style="font-size: 0.72rem; color: var(--text-muted);">
-                    &copy; 2026 EDURESERVE &bull; SMA MARSUDIRINI BEKASI
-                </span>
-                <span class="mono" style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem;">
-                    <span>LATENCY: <strong>12MS</strong></span>
-                    <span>&bull;</span>
-                    <span>SYS: <strong>NOMINAL</strong></span>
-                </span>
-            </div>
-        </div>
+    <footer class="site-footer">
+        <p>&copy; 2026 EduReserve &middot; SMA Marsudirini Bekasi</p>
     </footer>
-
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
     function toggleMobileMenu() {
         const menu = document.getElementById('navLinksMenu');
+        const button = document.getElementById('mobileMenuBtn');
         const icon = document.getElementById('mobileMenuIcon');
         const navbar = document.querySelector('.navbar');
-        if (menu) {
-            menu.classList.toggle('mobile-open');
-            if (navbar) navbar.classList.toggle('menu-expanded');
-            if (menu.classList.contains('mobile-open')) {
-                icon.className = 'fas fa-times';
-            } else {
-                icon.className = 'fas fa-bars';
-            }
-        }
+        const isOpen = menu.classList.toggle('mobile-open');
+        navbar.classList.toggle('menu-expanded', isOpen);
+        button.setAttribute('aria-expanded', isOpen);
+        icon.className = isOpen ? 'fas fa-times' : 'fas fa-bars';
     }
     // Auto-close on click outside
     document.addEventListener('click', function(e) {

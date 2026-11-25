@@ -21,7 +21,7 @@
     {% for item in teacher_list %}
     <div class="card" style="display: flex; flex-direction: column;">
         <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.5rem;">
-            <div class="user-avatar" style="width: 54px; height: 54px; font-size: 1.4rem;">
+            <div class="user-avatar user-avatar--directory" aria-hidden="true">
                 {{ item.teacher.name[0] }}
             </div>
             <div>

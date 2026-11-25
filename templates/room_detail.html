@@ -1,147 +1,105 @@
 {% extends 'base.html' %}
 
 {% block body_class %}wide-page{% endblock %}
-
-{% block title %}{{ room.name }} — EduReserve Space Details{% endblock %}
+{% block title %}{{ room.name }} | EduReserve{% endblock %}
 
 {% block content %}
-<div style="margin-bottom: 2rem;">
-    <a href="{{ url_for('rooms_catalog') }}" class="btn btn-secondary" style="font-size: 0.84rem; padding: 0.45rem 1.1rem;">
-        <i class="fas fa-arrow-left"></i> Back to Facilities
-    </a>
-</div>
+<a href="{{ url_for('rooms_catalog') }}" class="facility-back">
+    <i class="fas fa-arrow-left" aria-hidden="true"></i> Back to facilities
+</a>
 
-<div class="dashboard-dual-grid">
-    <!-- Main Left Column: Room Details & Booking Form -->
-    <div>
-        <div class="card" style="margin-bottom: 2.5rem; padding: 2.8rem;">
-            <div class="card-header">
-                <div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem;">
-                        <span class="badge badge-approved">{{ room.category.replace('_', ' ') }}</span>
-                        {% if room.requires_after_hours_only %}
-                            <span class="badge badge-pending"><i class="fas fa-moon"></i> After-Hours Only (15:30+)</span>
-                        {% endif %}
-                    </div>
-                    <h1 style="font-size: 2.4rem; color: #ffffff; margin-top: 0.4rem;">{{ room.name }}</h1>
-                    <p class="mono" style="color: var(--accent-mint); font-size: 0.84rem; margin-top: 0.4rem;">
-                        <i class="fas fa-location-dot" style="margin-right: 0.35rem;"></i> {{ room.location }} &bull; Max Capacity: <strong>{{ room.capacity }} occupants</strong>
-                    </p>
-                </div>
-                <div class="card-icon" style="width: 58px; height: 58px; font-size: 1.5rem;">
-                    <i class="fas fa-{{ room.icon }}"></i>
-                </div>
+<header class="facility-heading">
+    <h1>{{ room.name }}</h1>
+    <p class="facility-location">{{ room.location }} ? Capacity: {{ room.capacity }}</p>
+    {% if room.description %}<p>{{ room.description }}</p>{% endif %}
+    {% if room.requires_after_hours_only %}<p>Classrooms can be booked from {{ room.booking_start_time }}.</p>{% endif %}
+</header>
+
+<div class="facility-workspace">
+    <section class="facility-panel" aria-labelledby="schedule-title">
+        <h2 id="schedule-title">Room schedule</h2>
+        <p>Times are shown in WIB.</p>
+        <form class="facility-date-form" method="GET" action="{{ url_for('room_detail', room_id=room.id) }}">
+            <div>
+                <label class="form-label" for="schedule-date">Date</label>
+                <input type="date" id="schedule-date" name="date" class="form-input" value="{{ selected_date }}" min="{{ today_str }}" required>
             </div>
-
-            <p style="color: var(--text-secondary); font-size: 1rem; line-height: 1.7; margin: 1.5rem 0;">
-                {{ room.description }}
-            </p>
-
-            {% if room.requires_after_hours_only %}
-            <div style="padding: 1rem 1.4rem; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.28); border-radius: var(--radius-sm); color: #fbbf24; font-size: 0.88rem; margin-bottom: 2rem;">
-                <i class="fas fa-clock" style="margin-right: 0.4rem;"></i> <strong>After-Hours Policy:</strong> This classroom is reserved for standard curriculum until 15:30. Student bookings are eligible from 15:30 onwards.
-            </div>
-            {% endif %}
-
-            <!-- Advance Booking Form -->
-            <form action="{{ url_for('create_booking_route') }}" method="POST" style="background: rgba(8, 24, 18, 0.5); padding: 2.2rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-top: 2rem;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
-                    <span class="mono-tag">[RESERVATION REQUEST FORM]</span>
-                </div>
-                <input type="hidden" name="room_id" value="{{ room.id }}">
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem;">
-                    <div class="form-group">
-                        <label class="form-label">Booking Date</label>
-                        <input type="date" name="booking_date" class="form-input" value="{{ selected_date }}" required min="{{ today_str }}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Start Time</label>
-                        <select name="start_time" class="form-select" required>
-                            <option value="15:30">15:30</option>
-                            <option value="16:00">16:00</option>
-                            <option value="16:30">16:30</option>
-                            <option value="17:00">17:00</option>
-                            <option value="17:30">17:30</option>
-                            <option value="18:00">18:00</option>
-                            <option value="18:30">18:30</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">End Time (Max 2h)</label>
-                        <select name="end_time" class="form-select" required>
-                            <option value="16:30">16:30</option>
-                            <option value="17:00">17:00</option>
-                            <option value="17:30">17:30</option>
-                            <option value="18:00">18:00</option>
-                            <option value="18:30">18:30</option>
-                            <option value="19:00">19:00</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Purpose / Planned Activities</label>
-                    <input type="text" name="purpose" class="form-input" placeholder="e.g. Robotics Team Fabrication / Physics Olympiad Study" required>
-                </div>
-
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.85rem; margin-top: 1rem;">
-                    <i class="fas fa-paper-plane"></i> Submit Reservation for Faculty Approval
-                </button>
-            </form>
-        </div>
-
-        <!-- Schedule Section -->
-        <div style="margin-bottom: 1.25rem;">
-            <span class="mono-tag">[SCHEDULE &bull; {{ selected_date }}]</span>
-        </div>
-        <div class="card" style="padding: 2.2rem;">
-            {% if existing_bookings %}
-                <div style="display: flex; flex-direction: column; gap: 1rem;">
-                    {% for b in existing_bookings %}
-                        <div style="padding: 1.1rem 1.4rem; background: rgba(8, 24, 18, 0.45); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <strong class="mono" style="color: var(--accent-mint); font-size: 0.95rem;">
-                                    <i class="fas fa-clock" style="margin-right: 0.35rem;"></i> {{ b.start_time }} — {{ b.end_time }}
-                                </strong>
-                                <span style="font-size: 0.88rem; color: var(--text-secondary); margin-left: 1rem;">{{ b.purpose }}</span>
-                            </div>
-                            <span class="badge badge-{{ b.status.lower() }}">{{ b.status }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div style="text-align: center; padding: 2rem 1rem;">
-                    <i class="fas fa-calendar-check" style="font-size: 2rem; color: var(--accent-mint); opacity: 0.5; margin-bottom: 0.5rem;"></i>
-                    <p style="color: var(--text-muted); font-size: 0.92rem;">No conflicting reservations for this date. All standard slots open.</p>
-                </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Right Sidebar Column -->
-    <div>
-        {% if tic %}
-        <div class="card" style="margin-bottom: 2.2rem; padding: 2.2rem;">
-            <span class="mono-tag" style="margin-bottom: 1rem;">FACULTY IN CHARGE</span>
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="user-avatar" style="width: 48px; height: 48px; font-size: 1.2rem;">
-                    {{ tic.name[0] }}
-                </div>
-                <div>
-                    <h3 style="font-size: 1.2rem;">{{ tic.name }}</h3>
-                    <span class="mono" style="font-size: 0.78rem; color: var(--text-muted);">{{ tic.department }}</span>
-                </div>
-            </div>
-
-            <div style="font-size: 0.88rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 0.75rem; border-top: 1px solid var(--border-subtle); padding-top: 1.2rem;">
-                <div><i class="fas fa-envelope" style="color: var(--accent-mint); width: 22px;"></i> {{ tic.email }}</div>
-                <div><i class="fas fa-phone" style="color: var(--accent-mint); width: 22px;"></i> {{ tic.contact_phone }}</div>
-                <div><i class="fas fa-location-dot" style="color: var(--accent-mint); width: 22px;"></i> {{ tic.office_location }}</div>
-                <div><i class="fas fa-clock" style="color: var(--accent-mint); width: 22px;"></i> {{ tic.office_hours }}</div>
-            </div>
-        </div>
+            <button type="submit" class="btn btn-secondary">Check date</button>
+        </form>
+        {% if existing_bookings %}
+            <h3 class="facility-schedule-label">Reserved times</h3>
+            <ul class="facility-reservations">
+                {% for booking in existing_bookings %}
+                    <li>
+                        <strong>{{ booking.start_time }} to {{ booking.end_time }}</strong>
+                        <span>
+                            {% if booking.status == 'PENDING' %}Awaiting approval
+                            {% elif booking.status == 'CHECKED_IN' %}In use
+                            {% else %}Reserved{% endif %}
+                        </span>
+                        {% if booking.purpose %}<p>{{ booking.purpose }}</p>{% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No reservations for this date.</p>
         {% endif %}
-    </div>
+    </section>
+
+    {% if current_user.is_student() %}
+        <section class="facility-panel" aria-labelledby="booking-title">
+            <h2 id="booking-title">Request this room</h2>
+            <p><strong>{{ date_label }}</strong><br>Requests go to the teacher in charge.</p>
+            {% if booking_draft.error %}
+                <p class="facility-booking-error" id="booking-feedback" role="alert" tabindex="-1" autofocus>{{ booking_draft.error }}</p>
+            {% endif %}
+            {% if available_windows %}
+                <p>Available times:</p>
+                <ul class="facility-reservations">
+                    {% for window in available_windows %}
+                    <li>{{ window.start }} to {{ window.end }}</li>
+                    {% endfor %}
+                </ul>
+                <form action="{{ url_for('create_booking_route') }}" method="POST" class="facility-booking-form" data-booking-form>
+                    <input type="hidden" name="room_id" value="{{ room.id }}">
+                    <input type="hidden" name="booking_date" value="{{ selected_date }}">
+                    <div class="facility-time-fields">
+                        <div>
+                            <label class="form-label" for="booking-start">Start time</label>
+                            <input type="time" name="start_time" id="booking-start" class="form-input" min="{{ available_windows[0].start }}" max="{{ available_windows[-1].end }}" value="{{ booking_draft.start_time or '' }}" step="60" required>
+                        </div>
+                        <div>
+                            <label class="form-label" for="booking-end">End time</label>
+                            <input type="time" name="end_time" id="booking-end" class="form-input" aria-describedby="booking-duration" value="{{ booking_draft.end_time or '' }}" step="60" required>
+                        </div>
+                    </div>
+                    <p id="booking-duration" aria-live="polite" data-default="Choose any available start and end time on this date.">Choose any available start and end time on this date.</p>
+                    <div>
+                        <label class="form-label" for="booking-purpose">Purpose</label>
+                        <input type="text" name="purpose" id="booking-purpose" class="form-input" value="{{ booking_draft.purpose or '' }}" placeholder="e.g. Physics study group" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Request booking</button>
+                    <script type="application/json" data-available-windows>{{ available_windows|tojson }}</script>
+                </form>
+            {% else %}
+                <p>No booking times are available for this date.</p>
+                {% if next_date %}
+                    <a href="{{ url_for('room_detail', room_id=room.id, date=next_date) }}" class="btn btn-secondary">Check next day</a>
+                {% endif %}
+            {% endif %}
+        </section>
+    {% endif %}
 </div>
+
+{% if tic %}
+    <section class="facility-panel facility-contact" aria-labelledby="teacher-title">
+        <h2 id="teacher-title">Teacher in charge</h2>
+        <p><strong>{{ tic.name }}</strong>{% if tic.department %} ? {{ tic.department }}{% endif %}</p>
+        {% if tic.email %}<p><a href="mailto:{{ tic.email }}">{{ tic.email }}</a></p>{% endif %}
+        {% if tic.contact_phone %}<p>{{ tic.contact_phone }}</p>{% endif %}
+        {% if tic.office_location or tic.office_hours %}
+            <p>{{ tic.office_location }}{% if tic.office_location and tic.office_hours %} ? {% endif %}{{ tic.office_hours }}</p>
+        {% endif %}
+    </section>
+{% endif %}
 {% endblock %}

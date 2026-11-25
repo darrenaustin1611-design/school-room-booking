@@ -1,17 +1,18 @@
 import os
 import re
-from datetime import datetime
+from datetime import date, datetime, timedelta, timezone
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
 from config import Config
 from database import init_db, get_db
 from services.auth_service import AuthService
 from services.room_service import RoomService
 from services.booking_service import BookingService
-from services.qr_service import QRService
 from services.excel_service import ExcelService
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+SCHOOL_TIMEZONE = timezone(timedelta(hours=7))
 
 # Ensure database is initialized on startup
 with app.app_context():
@@ -60,7 +61,9 @@ def dashboard():
 
     elif user.is_teacher():
         cursor.execute("""
-            SELECT * FROM bookings WHERE teacher_in_charge_id = ? AND status = 'PENDING' ORDER BY id DESC
+            SELECT * FROM bookings WHERE teacher_in_charge_id = ?
+            AND (status = 'PENDING' OR (status = 'CHECKED_IN' AND extension_status = 'PENDING'))
+            ORDER BY id DESC
         """, (user.id,))
         rows = cursor.fetchall()
         for r in rows:
@@ -116,17 +119,23 @@ def rooms_catalog():
         return redirect(url_for('login'))
 
     category = request.args.get('category', 'all')
+    search = request.args.get('q', '').strip()
+    search_terms = search.casefold().split()
     rooms = RoomService.get_all_rooms(category=category)
 
     room_items = []
     for r in rooms:
+        searchable = f'{r.name} {r.location} {r.description}'.casefold()
+        if not all(term in searchable for term in search_terms):
+            continue
         tic = AuthService.get_user_by_id(r.teacher_in_charge_id)
         room_items.append({'room': r, 'tic': tic})
 
-    return render_template('rooms.html', active_page='rooms', room_items=room_items, current_category=category)
+    return render_template('rooms.html', active_page='rooms', room_items=room_items,
+                           current_category=category, search=search)
 
 @app.route('/rooms/<int:room_id>')
-def room_detail(room_id):
+def room_detail(room_id, booking_draft=None):
     user = get_current_user()
     if not user:
         return redirect(url_for('login'))
@@ -136,55 +145,103 @@ def room_detail(room_id):
         flash("Room not found.", 'error')
         return redirect(url_for('rooms_catalog'))
 
-    today_str = datetime.now().strftime('%Y-%m-%d')
-    selected_date = request.args.get('date', today_str)
+    school_now = datetime.now(SCHOOL_TIMEZONE)
+    today = school_now.date()
+    selected_date = (booking_draft or {}).get('booking_date') or request.args.get('date', today.isoformat())
+    try:
+        selected_day = max(today, date.fromisoformat(selected_date))
+    except ValueError:
+        selected_day = today
+    selected_date = selected_day.isoformat()
 
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT * FROM bookings WHERE room_id = ? AND booking_date = ? AND status IN ('PENDING', 'APPROVED', 'CHECKED_IN')
+        SELECT * FROM bookings WHERE room_id = ? AND booking_date = ?
+        AND status IN ('PENDING', 'APPROVED', 'CHECKED_IN', 'PENDING_CONFIRMATION')
         ORDER BY start_time ASC
     """, (room_id, selected_date))
     existing_bookings = [BookingService._instantiate_booking(r) for r in cursor.fetchall()]
     conn.close()
 
     tic = AuthService.get_user_by_id(room.teacher_in_charge_id)
-    qr_data = QRService.generate_room_qr_url(room_id, base_url=request.host_url.rstrip('/'))
+    earliest_start = room.booking_start_time
+    if selected_day == today:
+        next_minute = school_now + timedelta(minutes=1)
+        earliest_start = max(earliest_start, next_minute.strftime('%H:%M')) if next_minute.date() == today else '23:59'
+    available_windows = []
+    next_start = earliest_start
+    for booking in existing_bookings:
+        if next_start < booking.start_time:
+            available_windows.append({'start': next_start, 'end': booking.start_time})
+        next_start = max(next_start, booking.end_time)
+    if next_start < '23:59':
+        available_windows.append({'start': next_start, 'end': '23:59'})
 
     return render_template('room_detail.html',
                            active_page='rooms',
                            room=room,
                            tic=tic,
-                           qr_data=qr_data,
                            existing_bookings=existing_bookings,
                            selected_date=selected_date,
-                           today_str=today_str)
+                           date_label=selected_day.strftime('%A, %d %B %Y'),
+                           booking_draft=booking_draft or {},
+                           available_windows=available_windows,
+                           next_date=(selected_day + timedelta(days=1)).isoformat() if selected_day < date.max else None,
+                           today_str=today.isoformat()), 422 if booking_draft else 200
 
 @app.route('/book', methods=['POST'])
 def create_booking_route():
     user = get_current_user()
-    if not user or not user.is_student():
+    if not user:
         flash("Only logged-in students can request room bookings.", 'error')
         return redirect(url_for('login'))
+    if not user.is_student():
+        flash("Only students can request room bookings.", 'error')
+        return redirect(url_for('rooms_catalog'))
 
     room_id = request.form.get('room_id', type=int)
-    booking_date = request.form.get('booking_date')
-    start_time = request.form.get('start_time')
-    end_time = request.form.get('end_time')
+    if room_id is None:
+        flash("Choose a room before requesting a booking.", 'error')
+        return redirect(url_for('rooms_catalog'))
+
+    booking_date = request.form.get('booking_date', '')
+    start_time = request.form.get('start_time', '')
+    end_time = request.form.get('end_time', '')
     purpose = request.form.get('purpose', '').strip()
 
-    booking, err = BookingService.create_booking(
-        primary_student_id=user.id,
-        room_id=room_id,
-        booking_date=booking_date,
-        start_time=start_time,
-        end_time=end_time,
-        purpose=purpose
-    )
+    try:
+        booking_day = date.fromisoformat(booking_date)
+    except ValueError:
+        booking_day = None
+
+    school_now = datetime.now(SCHOOL_TIMEZONE)
+    if booking_day is None or booking_day < school_now.date():
+        err = "Choose today or a future date."
+    elif not start_time or not end_time or not purpose:
+        err = "Choose a start and end time and enter the purpose of your booking."
+    else:
+        try:
+            start_time = datetime.strptime(start_time, '%H:%M').strftime('%H:%M')
+            end_time = datetime.strptime(end_time, '%H:%M').strftime('%H:%M')
+        except ValueError:
+            err = "Choose a valid start and end time."
+        else:
+            if booking_day == school_now.date() and start_time <= school_now.strftime('%H:%M'):
+                err = "That start time has passed. Choose a later time or another date."
+            else:
+                _, err = BookingService.create_booking(
+                    primary_student_id=user.id,
+                    room_id=room_id,
+                    booking_date=booking_day.isoformat(),
+                    start_time=start_time,
+                    end_time=end_time,
+                    purpose=purpose
+                )
 
     if err:
-        flash(err, 'error')
-        return redirect(url_for('room_detail', room_id=room_id, date=booking_date))
+        draft = dict(booking_date=booking_date, start_time=start_time, end_time=end_time, purpose=purpose, error=err)
+        return room_detail(room_id, booking_draft=draft)
 
     flash("Booking request submitted! Sent to Teacher-in-Charge for approval.", 'success')
     return redirect(url_for('my_bookings'))
@@ -218,7 +275,9 @@ def approvals_queue():
 
     # 1. Pending Approvals where user is TIC
     cursor.execute("""
-        SELECT * FROM bookings WHERE teacher_in_charge_id = ? AND status = 'PENDING' ORDER BY id DESC
+        SELECT * FROM bookings WHERE teacher_in_charge_id = ?
+        AND (status = 'PENDING' OR (status = 'CHECKED_IN' AND extension_status = 'PENDING'))
+        ORDER BY id DESC
     """, (user.id,))
     pending_rows = cursor.fetchall()
     pending_list = []
@@ -285,6 +344,8 @@ def teachers_directory():
 
 @app.route('/qr-scanner/<int:room_id>')
 def qr_scanner_page(room_id):
+    if not get_current_user():
+        return redirect(url_for('login'))
     room = RoomService.get_room_by_id(room_id)
     if not room:
         return "Invalid Room", 440
@@ -360,10 +421,16 @@ def approval_action_api(booking_id):
     action = data.get('action')
     reason = data.get('reason', 'No reason provided')
 
-    if action == 'APPROVE':
+    if action == 'APPROVE_EXTENSION':
+        ok, msg = BookingService.approve_extension(booking_id, user.id)
+    elif action == 'REJECT_EXTENSION':
+        ok, msg = BookingService.reject_extension(booking_id, user.id, reason)
+    elif action == 'APPROVE':
         ok, msg = BookingService.approve_booking(booking_id, user.id)
-    else:
+    elif action == 'REJECT':
         ok, msg = BookingService.reject_booking(booking_id, user.id, reason)
+    else:
+        return jsonify({'success': False, 'message': 'Invalid approval action.'}), 400
 
     return jsonify({'success': ok, 'message': msg})
 
@@ -500,6 +567,10 @@ def admin_upload_excel():
 
 @app.route('/quick-demo-login/<int:user_id>')
 def quick_demo_login(user_id):
+    user = get_current_user()
+    if not user or not user.is_admin():
+        flash("Administrator access required.", 'error')
+        return redirect(url_for('login' if not user else 'dashboard'))
     u = AuthService.get_user_by_id(user_id)
     if not u:
         flash("Akun pengguna tidak ditemukan.", "error")

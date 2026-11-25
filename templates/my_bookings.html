@@ -69,9 +69,13 @@
                 <button onclick="toggleUsage({{ item.booking.id }}, 'finish')" class="btn btn-danger" style="background: #ef4444; border-color: #ef4444; font-weight: 600;">
                     <i class="fas fa-stop"></i> Selesai Pakai
                 </button>
-                <button onclick="openExtensionModal({{ item.booking.id }})" class="btn btn-secondary">
-                    <i class="fas fa-clock-rotate-left"></i> Request Extension
-                </button>
+                {% if item.booking.extension_status == 'PENDING' %}
+                    <span class="badge badge-pending">Extension +{{ item.booking.extension_minutes }} min awaiting approval</span>
+                {% else %}
+                    <button onclick="openExtensionModal({{ item.booking.id }})" class="btn btn-secondary">
+                        <i class="fas fa-clock-rotate-left"></i> Request Extension
+                    </button>
+                {% endif %}
             {% endif %}
         </div>
     </div>

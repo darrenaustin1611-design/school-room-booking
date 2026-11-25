@@ -115,9 +115,13 @@
                             <button onclick="toggleUsage({{ active_booking.id }}, 'finish')" class="btn btn-danger" style="background: #ef4444; border-color: #ef4444; font-weight: 600; padding: 0.75rem 1.6rem; font-size: 1rem;">
                                 <i class="fas fa-stop"></i> Selesai Pakai
                             </button>
-                            <button onclick="openExtensionModal({{ active_booking.id }})" class="btn btn-secondary">
-                                <i class="fas fa-clock-rotate-left"></i> Request Extension
-                            </button>
+                            {% if active_booking.extension_status == 'PENDING' %}
+                                <span class="badge badge-pending">Extension +{{ active_booking.extension_minutes }} min awaiting approval</span>
+                            {% else %}
+                                <button onclick="openExtensionModal({{ active_booking.id }})" class="btn btn-secondary">
+                                    <i class="fas fa-clock-rotate-left"></i> Request Extension
+                                </button>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>
@@ -147,7 +151,7 @@
                         <div class="card" style="padding: 2rem 2.2rem;">
                             <div class="card-header" style="margin-bottom: 0.75rem;">
                                 <div>
-                                    <span class="badge badge-pending">Approval Required</span>
+                                    <span class="badge badge-pending">{{ 'Extension Request' if item.booking.extension_status == 'PENDING' and item.booking.status == 'CHECKED_IN' else 'Approval Required' }}</span>
                                     <h3 style="margin-top: 0.5rem; font-size: 1.5rem;">{{ item.room.name }}</h3>
                                 </div>
                                 <span class="mono" style="font-size: 0.78rem; color: var(--text-muted);">
@@ -157,16 +161,20 @@
                             <p class="mono" style="font-size: 0.86rem; color: var(--accent-mint); margin-bottom: 0.5rem;">
                                 <i class="fas fa-calendar-day"></i> {{ item.booking.booking_date }} &bull; {{ item.booking.start_time }} — {{ item.booking.end_time }}
                             </p>
+                            {% set extension_request = item.booking.status == 'CHECKED_IN' and item.booking.extension_status == 'PENDING' %}
+                            {% if extension_request %}
+                            <p style="color: var(--accent-mint); margin-bottom: 0.5rem;">Requested extension: +{{ item.booking.extension_minutes }} min, until <strong>{{ item.booking.requested_extension_end_time }}</strong></p>
+                            {% endif %}
                             <p style="font-size: 0.94rem; color: var(--text-secondary); margin-bottom: 1.5rem; font-style: italic;">
                                 "{{ item.booking.purpose }}"
                             </p>
 
-                            <div style="display: flex; gap: 1rem;">
-                                <button onclick="handleApproval({{ item.booking.id }}, 'APPROVE')" class="btn btn-success">
-                                    <i class="fas fa-check"></i> Approve Request
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <button onclick="handleApproval({{ item.booking.id }}, '{{ 'APPROVE_EXTENSION' if extension_request else 'APPROVE' }}')" class="btn btn-success">
+                                    <i class="fas fa-check"></i> {{ 'Approve Extension' if extension_request else 'Approve Request' }}
                                 </button>
-                                <button onclick="handleApproval({{ item.booking.id }}, 'REJECT')" class="btn btn-danger">
-                                    <i class="fas fa-times"></i> Decline
+                                <button onclick="handleApproval({{ item.booking.id }}, '{{ 'REJECT_EXTENSION' if extension_request else 'REJECT' }}')" class="btn btn-danger">
+                                    <i class="fas fa-times"></i> {{ 'Decline Extension' if extension_request else 'Decline' }}
                                 </button>
                             </div>
                         </div>
