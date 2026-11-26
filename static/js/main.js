@@ -7,7 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     initBookingTimes();
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     initAmbientSpotlight();
-    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const canRunAmbientCanvas = window.matchMedia('(hover: hover) and (pointer: fine)').matches
+        && !connection?.saveData
+        && (navigator.hardwareConcurrency || 4) > 2;
+    if (canRunAmbientCanvas) {
         initAmbientParticleCanvas();
     }
     initScrollPhysics();
@@ -63,8 +67,11 @@ function initScrollPhysics() {
     let lastScrollY = window.scrollY;
     let lastTime    = performance.now();
     let smoothVelocity = 0;
+    let frameRequested = false;
+    let velocityResetTimer;
 
-    function onScrollFrame(currentTime) {
+    function updateScrollState(currentTime) {
+        frameRequested = false;
         const currentScrollY = window.scrollY;
         const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
         const scrollPercent = Math.min(100, Math.max(0, (currentScrollY / maxScroll) * 100));
@@ -80,6 +87,8 @@ function initScrollPhysics() {
         const rawVelocity = Math.abs(scrollDelta) / (dt / 1000);
         smoothVelocity = smoothVelocity * 0.82 + rawVelocity * 0.18;
         globalScrollVelocity = scrollDelta * 0.35;
+        clearTimeout(velocityResetTimer);
+        velocityResetTimer = setTimeout(() => { globalScrollVelocity = 0; }, 80);
 
         // HUD
         if (hudVelocity) hudVelocity.innerText = Math.round(smoothVelocity).toString().padStart(2, '0');
@@ -102,10 +111,17 @@ function initScrollPhysics() {
 
         lastScrollY = currentScrollY;
         lastTime = currentTime;
-        requestAnimationFrame(onScrollFrame);
     }
 
-    requestAnimationFrame(onScrollFrame);
+    function requestScrollUpdate() {
+        if (frameRequested) return;
+        frameRequested = true;
+        requestAnimationFrame(updateScrollState);
+    }
+
+    window.addEventListener('scroll', requestScrollUpdate, { passive: true });
+    window.addEventListener('resize', requestScrollUpdate, { passive: true });
+    requestScrollUpdate();
 }
 
 /* ==========================================================================
@@ -113,9 +129,9 @@ function initScrollPhysics() {
    This replaces the broken continuous rAF loop that kept elements at opacity:0
    ========================================================================== */
 function initRevealAnimations() {
-    // Add reveal-pending class to all cards & hero elements
+    // Facility cards opt out so the catalog stays immediately visible while scrolling.
     const revealTargets = document.querySelectorAll(
-        '.card, .spacious-hero, .prompt-banner, .grid-cards > *, [data-reveal]'
+        '.card:not([data-no-reveal]), .spacious-hero, .prompt-banner, .grid-cards > :not([data-no-reveal]), [data-reveal]'
     );
 
     revealTargets.forEach((el, index) => {
@@ -224,7 +240,9 @@ function initAmbientParticleCanvas() {
         height = canvas.height = window.innerHeight;
     });
 
-    const particleCount = Math.min(Math.max(50, Math.floor((width * height) / 18000)), 80);
+    const isLowMemoryDevice = navigator.deviceMemory && navigator.deviceMemory <= 4;
+    const particleLimit = isLowMemoryDevice ? 24 : 40;
+    const particleCount = Math.min(Math.max(18, Math.floor((width * height) / 36000)), particleLimit);
     const particles = [];
 
     class Particle {
@@ -283,7 +301,18 @@ function initAmbientParticleCanvas() {
     for (let i = 0; i < particleCount; i++) particles.push(new Particle());
 
     let time = 0;
-    function render() {
+    let animationFrameId = null;
+    let lastFrameTime = 0;
+    const frameInterval = 1000 / 30;
+
+    function render(now) {
+        animationFrameId = null;
+        if (document.hidden) return;
+        if (now - lastFrameTime < frameInterval) {
+            animationFrameId = requestAnimationFrame(render);
+            return;
+        }
+        lastFrameTime = now;
         time++;
         if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
             width = canvas.width = window.innerWidth;
@@ -309,9 +338,25 @@ function initAmbientParticleCanvas() {
         }
 
         particles.forEach(p => { p.update(time); p.draw(); });
-        requestAnimationFrame(render);
+        animationFrameId = requestAnimationFrame(render);
     }
-    render();
+
+    function startCanvas() {
+        if (!document.hidden && animationFrameId === null) {
+            lastFrameTime = 0;
+            animationFrameId = requestAnimationFrame(render);
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && animationFrameId !== null) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        } else {
+            startCanvas();
+        }
+    });
+    startCanvas();
 }
 
 /* ==========================================================================

@@ -95,8 +95,11 @@
 
 <script>
 function fillLogin(email, password) {
-    document.getElementById('loginEmail').value = email;
-    document.getElementById('loginPassword').value = password;
+    const emailInput = document.getElementById('loginEmail');
+    const passwordInput = document.getElementById('loginPassword');
+    emailInput.value = email;
+    passwordInput.value = password;
+    emailInput.closest('form').requestSubmit();
 }
 </script>
 {% endblock %}

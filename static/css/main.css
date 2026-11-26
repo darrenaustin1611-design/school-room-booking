@@ -224,7 +224,6 @@ body {
       transparent 50%
     );
   transition: transform 0.2s linear;
-  will-change: transform;
 }
 
 #ambient-canvas {
@@ -608,6 +607,7 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
 .reveal-visible {
   opacity: 1 !important;
   transform: translateY(0) scale(1) !important;
+  will-change: auto;
 }
 
 /* Legacy scrub-target (neutral, kept for compat) */
@@ -765,7 +765,6 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
     transform 0.2s cubic-bezier(0.2, 0, 0, 1);
   position: relative;
   overflow: hidden;
-  will-change: transform;
   transform-style: preserve-3d;
 }
 
@@ -832,6 +831,26 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 2.25rem;
   margin-top: 2rem;
+}
+
+/* Keep the faculty directory balanced without changing the card theme. */
+.faculty-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 1.5rem;
+}
+
+.faculty-card {
+  min-width: 0;
+}
+
+.faculty-card-spaces {
+  margin-top: 0;
+}
+
+.faculty-card strong,
+.faculty-card a {
+  overflow-wrap: anywhere;
 }
 
 .dashboard-dual-grid {
@@ -1301,6 +1320,17 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   gap: 1.25rem;
 }
 
+.facility-workspace-column {
+  display: grid;
+  align-content: start;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.facility-workspace-column:only-child {
+  grid-column: 1 / -1;
+}
+
 .facility-panel {
   padding: clamp(1rem, 3vw, 1.75rem);
   border: 1px solid var(--border-card);
@@ -1390,12 +1420,24 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
 }
 
 .facility-contact {
-  margin-top: 1.25rem;
+  margin-top: 0;
 }
 
 @media (max-width: 720px) {
   .facility-workspace {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 861px) and (max-width: 1099px) {
+  .faculty-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .faculty-grid > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    width: calc((100% - 1.5rem) / 2);
+    justify-self: center;
   }
 }
 

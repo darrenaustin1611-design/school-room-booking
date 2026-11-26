@@ -4,6 +4,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'school-room-booking-secret-key-2026')
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
     DATABASE_PATH = os.path.join(BASE_DIR, 'school_booking.db')
+    SEND_FILE_MAX_AGE_DEFAULT = 31536000
     
     # System Booking Rules
     MAX_ACTIVE_BOOKINGS_PER_STUDENT = 1

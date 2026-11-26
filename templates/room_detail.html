@@ -16,35 +16,49 @@
 </header>
 
 <div class="facility-workspace">
-    <section class="facility-panel" aria-labelledby="schedule-title">
-        <h2 id="schedule-title">Room schedule</h2>
-        <p>Times are shown in WIB.</p>
-        <form class="facility-date-form" method="GET" action="{{ url_for('room_detail', room_id=room.id) }}">
-            <div>
-                <label class="form-label" for="schedule-date">Date</label>
-                <input type="date" id="schedule-date" name="date" class="form-input" value="{{ selected_date }}" min="{{ today_str }}" required>
-            </div>
-            <button type="submit" class="btn btn-secondary">Check date</button>
-        </form>
-        {% if existing_bookings %}
-            <h3 class="facility-schedule-label">Reserved times</h3>
-            <ul class="facility-reservations">
-                {% for booking in existing_bookings %}
-                    <li>
-                        <strong>{{ booking.start_time }} to {{ booking.end_time }}</strong>
-                        <span>
-                            {% if booking.status == 'PENDING' %}Awaiting approval
-                            {% elif booking.status == 'CHECKED_IN' %}In use
-                            {% else %}Reserved{% endif %}
-                        </span>
-                        {% if booking.purpose %}<p>{{ booking.purpose }}</p>{% endif %}
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>No reservations for this date.</p>
+    <div class="facility-workspace-column">
+        <section class="facility-panel" aria-labelledby="schedule-title">
+            <h2 id="schedule-title">Room schedule</h2>
+            <p>Times are shown in WIB.</p>
+            <form class="facility-date-form" method="GET" action="{{ url_for('room_detail', room_id=room.id) }}">
+                <div>
+                    <label class="form-label" for="schedule-date">Date</label>
+                    <input type="date" id="schedule-date" name="date" class="form-input" value="{{ selected_date }}" min="{{ today_str }}" required>
+                </div>
+                <button type="submit" class="btn btn-secondary">Check date</button>
+            </form>
+            {% if existing_bookings %}
+                <h3 class="facility-schedule-label">Reserved times</h3>
+                <ul class="facility-reservations">
+                    {% for booking in existing_bookings %}
+                        <li>
+                            <strong>{{ booking.start_time }} to {{ booking.end_time }}</strong>
+                            <span>
+                                {% if booking.status == 'PENDING' %}Awaiting approval
+                                {% elif booking.status == 'CHECKED_IN' %}In use
+                                {% else %}Reserved{% endif %}
+                            </span>
+                            {% if booking.purpose %}<p>{{ booking.purpose }}</p>{% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No reservations for this date.</p>
+            {% endif %}
+        </section>
+
+        {% if tic %}
+            <section class="facility-panel facility-contact" aria-labelledby="teacher-title">
+                <h2 id="teacher-title">Teacher in charge</h2>
+                <p><strong>{{ tic.name }}</strong>{% if tic.department %} ? {{ tic.department }}{% endif %}</p>
+                {% if tic.email %}<p><a href="mailto:{{ tic.email }}">{{ tic.email }}</a></p>{% endif %}
+                {% if tic.contact_phone %}<p>{{ tic.contact_phone }}</p>{% endif %}
+                {% if tic.office_location or tic.office_hours %}
+                    <p>{{ tic.office_location }}{% if tic.office_location and tic.office_hours %} ? {% endif %}{{ tic.office_hours }}</p>
+                {% endif %}
+            </section>
         {% endif %}
-    </section>
+    </div>
 
     {% if current_user.is_student() %}
         <section class="facility-panel" aria-labelledby="booking-title">
@@ -90,16 +104,4 @@
         </section>
     {% endif %}
 </div>
-
-{% if tic %}
-    <section class="facility-panel facility-contact" aria-labelledby="teacher-title">
-        <h2 id="teacher-title">Teacher in charge</h2>
-        <p><strong>{{ tic.name }}</strong>{% if tic.department %} ? {{ tic.department }}{% endif %}</p>
-        {% if tic.email %}<p><a href="mailto:{{ tic.email }}">{{ tic.email }}</a></p>{% endif %}
-        {% if tic.contact_phone %}<p>{{ tic.contact_phone }}</p>{% endif %}
-        {% if tic.office_location or tic.office_hours %}
-            <p>{{ tic.office_location }}{% if tic.office_location and tic.office_hours %} ? {% endif %}{{ tic.office_hours }}</p>
-        {% endif %}
-    </section>
-{% endif %}
 {% endblock %}

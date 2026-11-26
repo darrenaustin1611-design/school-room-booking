@@ -1,5 +1,6 @@
 import os
 import re
+import hashlib
 from datetime import date, datetime, timedelta, timezone
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
 from config import Config
@@ -11,6 +12,16 @@ from services.excel_service import ExcelService
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+def build_asset_version():
+    """Create a stable cache key that changes whenever local CSS or JS changes."""
+    digest = hashlib.sha256()
+    for relative_path in ('static/css/main.css', 'static/js/main.js'):
+        with open(os.path.join(app.root_path, relative_path), 'rb') as asset:
+            digest.update(asset.read())
+    return digest.hexdigest()[:12]
+
+ASSET_VERSION = build_asset_version()
 
 SCHOOL_TIMEZONE = timezone(timedelta(hours=7))
 
@@ -26,7 +37,7 @@ def get_current_user():
 
 @app.context_processor
 def inject_user():
-    return dict(current_user=get_current_user())
+    return dict(current_user=get_current_user(), asset_version=ASSET_VERSION)
 
 # --- Routes ---
 
