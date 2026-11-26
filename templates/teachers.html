@@ -17,9 +17,9 @@
     </div>
 </div>
 
-<div class="grid-cards faculty-grid">
+<div class="grid-cards">
     {% for item in teacher_list %}
-    <div class="card faculty-card" style="display: flex; flex-direction: column;">
+    <div class="card" style="display: flex; flex-direction: column;">
         <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.5rem;">
             <div class="user-avatar user-avatar--directory" aria-hidden="true">
                 {{ item.teacher.name[0] }}
@@ -59,7 +59,7 @@
             </div>
         </div>
 
-        <div class="faculty-card-spaces">
+        <div style="margin-top: auto;">
             <span class="mono" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-bottom: 0.6rem; letter-spacing: 0.05em;">
                 MANAGED SPACES:
             </span>

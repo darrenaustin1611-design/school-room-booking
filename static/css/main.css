@@ -300,11 +300,6 @@ p {
   padding: 1.4rem 1.5rem 0.5rem;
   display: flex;
   justify-content: center;
-  transition: padding 0.3s var(--ease-spring);
-}
-
-.navbar-wrapper.scrolled {
-  padding-top: 0.75rem;
 }
 
 .navbar {
@@ -328,8 +323,6 @@ p {
 .navbar-wrapper.scrolled .navbar {
   background: rgba(10, 28, 22, 0.92);
   box-shadow: 0 20px 45px -8px rgba(0, 0, 0, 0.65), 0 0 20px rgba(159, 227, 206, 0.12);
-  padding-top: 0.55rem;
-  padding-bottom: 0.55rem;
   border-color: var(--border-glow);
 }
 
@@ -342,12 +335,7 @@ p {
   width: 80%;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--accent-sage), transparent);
-  animation: navGlowPulse 3s ease-in-out infinite alternate;
-}
-
-@keyframes navGlowPulse {
-  0% { opacity: 0.3; }
-  100% { opacity: 0.7; }
+  opacity: 0.65;
 }
 
 .brand {
@@ -833,26 +821,6 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   margin-top: 2rem;
 }
 
-/* Keep the faculty directory balanced without changing the card theme. */
-.faculty-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: start;
-  gap: 1.5rem;
-}
-
-.faculty-card {
-  min-width: 0;
-}
-
-.faculty-card-spaces {
-  margin-top: 0;
-}
-
-.faculty-card strong,
-.faculty-card a {
-  overflow-wrap: anywhere;
-}
-
 .dashboard-dual-grid {
   display: grid;
   grid-template-columns: 1.8fr 1fr;
@@ -1218,6 +1186,65 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   min-width: 860px;
 }
 
+.admin-students-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.admin-students-table tr > :is(th, td) {
+  padding-inline: 0.8rem !important;
+}
+
+.admin-students-table .admin-person {
+  min-width: 0;
+}
+
+.admin-student-email {
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.admin-student-class {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-xs);
+  background: var(--bg-glass-input);
+  color: var(--accent-mint);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-rooms-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.admin-rooms-table :is(th, td) {
+  padding: 0.9rem 1rem;
+}
+
+.admin-rooms-table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-rooms-table tbody tr:hover,
+.admin-rooms-table tbody tr:focus-within {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-rooms-table .admin-room-action {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
 .admin-teacher-email {
   overflow-wrap: anywhere;
 }
@@ -1426,18 +1453,6 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
 @media (max-width: 720px) {
   .facility-workspace {
     grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (min-width: 861px) and (max-width: 1099px) {
-  .faculty-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .faculty-grid > :last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-    width: calc((100% - 1.5rem) / 2);
-    justify-self: center;
   }
 }
 

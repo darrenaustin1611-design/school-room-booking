@@ -23,29 +23,27 @@
     </div>
 </div>
 
-<!-- Key Performance Metrics -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid #38bdf8;">
-        <span class="mono" style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Guru & Staf</span>
-        <div style="font-size: 2.2rem; font-weight: 700; color: #ffffff; margin-top: 0.35rem;">{{ teachers|length }}</div>
-        <span style="font-size: 0.8rem; color: #38bdf8;"><i class="fas fa-chalkboard-teacher"></i> Terpetakan ke TIC & Walas</span>
+{% set classroom_count = room_data|selectattr('room.category', 'equalto', 'classroom')|list|length %}
+{% set homeroom_count = teacher_data|selectattr('homeroom_name')|list|length %}
+<dl class="admin-stats" aria-label="Ringkasan data sekolah">
+    <div class="card admin-stat" style="--stat-accent: #38bdf8;">
+        <dt>Guru dan staf</dt>
+        <dd>{{ teachers|length }}</dd>
     </div>
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid #10b981;">
-        <span class="mono" style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Ruangan & Lab</span>
-        <div style="font-size: 2.2rem; font-weight: 700; color: #ffffff; margin-top: 0.35rem;">{{ rooms|length }}</div>
-        <span style="font-size: 0.8rem; color: #10b981;"><i class="fas fa-door-open"></i> 9 Kelas + 11 Fasilitas</span>
+    <div class="card admin-stat" style="--stat-accent: #10b981;">
+        <dt>Ruangan dan fasilitas</dt>
+        <dd>{{ rooms|length }}</dd>
+        <dd class="admin-stat-detail">{{ classroom_count }} ruang kelas, {{ rooms|length - classroom_count }} fasilitas lain</dd>
     </div>
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid #a855f7;">
-        <span class="mono" style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Siswa Demo Terdaftar</span>
-        <div style="font-size: 2.2rem; font-weight: 700; color: #ffffff; margin-top: 0.35rem;">{{ students|length }}</div>
-        <span style="font-size: 0.8rem; color: #a855f7;"><i class="fas fa-user-graduate"></i> Kelas 11-A, 11-B, 11-C</span>
+    <div class="card admin-stat" style="--stat-accent: #a855f7;">
+        <dt>Akun demo siswa</dt>
+        <dd>{{ students|length }}</dd>
     </div>
-    <div class="card" style="padding: 1.5rem; border-left: 4px solid #f59e0b;">
-        <span class="mono" style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Wali Kelas Aktif</span>
-        <div style="font-size: 2.2rem; font-weight: 700; color: #ffffff; margin-top: 0.35rem;">9</div>
-        <span style="font-size: 0.8rem; color: #f59e0b;"><i class="fas fa-user-shield"></i> Sinkron otomatis</span>
+    <div class="card admin-stat" style="--stat-accent: #f59e0b;">
+        <dt>Wali kelas aktif</dt>
+        <dd>{{ homeroom_count }}</dd>
     </div>
-</div>
+</dl>
 
 <!-- Excel Sync Hub -->
 <div class="card" style="padding: 2rem; margin-bottom: 2.5rem; background: linear-gradient(135deg, rgba(6, 44, 30, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); border: 1px solid rgba(56, 189, 248, 0.25);">
@@ -108,16 +106,15 @@
                 <i class="fas fa-address-book" style="color: var(--accent-mint); margin-right: 0.5rem;"></i>
                 Daftar Lengkap Guru, Penanggung Jawab (PIC) & Wali Kelas
             </h3>
-            <span class="mono" style="font-size: 0.75rem; color: var(--text-muted);">PASSWORD SEMUA AKUN: password123</span>
         </div>
         
         <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+            <table class="admin-teachers-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
                 <thead>
                     <tr style="background: rgba(15, 23, 42, 0.7); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
                         <th style="padding: 1rem 1.25rem;">Guru / Pendidik</th>
                         <th style="padding: 1rem 1.25rem;">Mata Pelajaran & Kantor</th>
-                        <th style="padding: 1rem 1.25rem;">Kontak WhatsApp / HP</th>
+                        <th style="padding: 1rem 1.25rem;">WhatsApp</th>
                         <th style="padding: 1rem 1.25rem;">Wali Kelas (Homeroom)</th>
                         <th style="padding: 1rem 1.25rem;">PIC Ruangan / Lab</th>
                         <th style="padding: 1rem 1.25rem; text-align: right;">Aksi Demo</th>
@@ -127,13 +124,13 @@
                     {% for item in teacher_data %}
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
                         <td style="padding: 1rem 1.25rem;">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div class="user-avatar" style="width: 38px; height: 38px; font-size: 1rem;">
+                            <div class="admin-person">
+                                <div class="user-avatar" aria-hidden="true">
                                     {{ item.teacher.name[0] }}
                                 </div>
-                                <div>
+                                <div class="admin-person-name">
                                     <div style="font-weight: 600; color: #ffffff;">{{ item.teacher.name }}</div>
-                                    <div class="mono" style="font-size: 0.75rem; color: var(--text-muted);">{{ item.teacher.email }}</div>
+                                    <div class="mono admin-teacher-email" style="font-size: 0.75rem; color: var(--text-muted);">{{ item.teacher.email }}</div>
                                 </div>
                             </div>
                         </td>
@@ -142,14 +139,15 @@
                             <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.2rem;">
                                 <i class="fas fa-location-dot" style="font-size: 0.7rem;"></i> {{ item.teacher.office_location }}
                             </div>
-                            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.15rem;">
-                                <i class="fas fa-clock" style="font-size: 0.7rem;"></i> {{ item.teacher.office_hours }}
-                            </div>
                         </td>
                         <td style="padding: 1rem 1.25rem;">
-                            <a href="https://wa.me/{{ item.clean_phone }}" target="_blank" class="badge badge-checkedin" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem;">
-                                <i class="fab fa-whatsapp" style="color: #10b981;"></i> {{ item.teacher.contact_phone }}
-                            </a>
+                            {% if item.clean_phone %}
+                                <a href="https://wa.me/{{ item.clean_phone }}" target="_blank" rel="noopener" class="admin-whatsapp-link">
+                                    <i class="fab fa-whatsapp" aria-hidden="true"></i> {{ item.teacher.contact_phone }}
+                                </a>
+                            {% else %}
+                                <span class="admin-contact-empty">Belum tersedia</span>
+                            {% endif %}
                         </td>
                         <td style="padding: 1rem 1.25rem;">
                             {% if item.homeroom_name %}
@@ -194,16 +192,15 @@
                 <i class="fas fa-user-graduate" style="color: var(--accent-mint); margin-right: 0.5rem;"></i>
                 Daftar Siswa Demo Terdaftar
             </h3>
-            <span class="mono" style="font-size: 0.75rem; color: var(--text-muted);">PASSWORD SEMUA SISWA: password123</span>
         </div>
 
         <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+            <table class="admin-students-table">
                 <thead>
                     <tr style="background: rgba(15, 23, 42, 0.7); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
                         <th style="padding: 1rem 1.25rem;">Nama Siswa</th>
                         <th style="padding: 1rem 1.25rem;">NIS / Student ID</th>
-                        <th style="padding: 1rem 1.25rem;">Email Sekolah</th>
+                        <th style="padding: 1rem 1.25rem;">Email Contoh</th>
                         <th style="padding: 1rem 1.25rem;">Kelas</th>
                         <th style="padding: 1rem 1.25rem;">Guru Wali Kelas</th>
                         <th style="padding: 1rem 1.25rem; text-align: right;">Aksi Demo</th>
@@ -213,26 +210,26 @@
                     {% for item in student_data %}
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
                         <td style="padding: 1rem 1.25rem;">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div class="user-avatar" style="width: 36px; height: 36px; font-size: 0.95rem; background: #059669;">
+                            <div class="admin-person">
+                                <div class="user-avatar user-avatar--student" aria-hidden="true">
                                     {{ item.student.name[0] }}
                                 </div>
-                                <strong style="color: #ffffff;">{{ item.student.name }}</strong>
+                                <strong class="admin-person-name" style="color: #ffffff;">{{ item.student.name }}</strong>
                             </div>
                         </td>
                         <td style="padding: 1rem 1.25rem;">
                             <span class="badge badge-checkedin mono">{{ item.student.student_id_number }}</span>
                         </td>
                         <td style="padding: 1rem 1.25rem;">
-                            <span class="mono" style="color: var(--text-secondary);">{{ item.student.email }}</span>
+                            <span class="admin-student-email">siswa{{ item.student.id }}@example.com</span>
                         </td>
                         <td style="padding: 1rem 1.25rem;">
-                            <span class="badge badge-approved">{{ item.classroom_name }}</span>
+                            {% set classroom = item.classroom_name %}
+                            <span class="admin-student-class">{{ classroom[6:] if classroom and classroom[:6]|lower == 'class ' else classroom or '—' }}</span>
                         </td>
                         <td style="padding: 1rem 1.25rem;">
                             {% if item.walas %}
                                 <div style="font-weight: 600; color: #ffffff;">{{ item.walas.name }}</div>
-                                <div style="font-size: 0.75rem; color: #38bdf8;">{{ item.walas.department }}</div>
                             {% else %}
                                 <span class="mono" style="color: var(--text-muted);">—</span>
                             {% endif %}
@@ -256,48 +253,43 @@
         <div style="padding: 1.25rem 1.5rem; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
             <h3 style="font-size: 1.15rem; color: #ffffff; margin: 0;">
                 <i class="fas fa-door-open" style="color: var(--accent-mint); margin-right: 0.5rem;"></i>
-                Daftar Seluruh Fasilitas, Laboratorium & Ruang Kelas (20 Ruangan)
+                Daftar Ruangan &amp; Lab ({{ room_data|length }})
             </h3>
         </div>
 
         <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+            <table class="admin-rooms-table">
                 <thead>
                     <tr style="background: rgba(15, 23, 42, 0.7); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
-                        <th style="padding: 1rem 1.25rem;">Nama Ruangan</th>
-                        <th style="padding: 1rem 1.25rem;">Kategori</th>
-                        <th style="padding: 1rem 1.25rem;">Kapasitas & Lokasi</th>
-                        <th style="padding: 1rem 1.25rem;">Guru Penanggung Jawab (PIC / TIC)</th>
-                        <th style="padding: 1rem 1.25rem;">PIN Check-in QR</th>
-                        <th style="padding: 1rem 1.25rem; text-align: right;">Aksi</th>
+                        <th scope="col">Nama Ruangan</th>
+                        <th scope="col">Kategori</th>
+                        <th scope="col">Kapasitas &amp; Lokasi</th>
+                        <th scope="col">Guru Penanggung Jawab</th>
+                        <th scope="col" class="admin-room-action">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in room_data %}
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                        <td style="padding: 1rem 1.25rem;">
+                    <tr>
+                        <td>
                             <div style="font-weight: 600; color: #ffffff;">{{ item.room.name }}</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">{{ item.room.description[:60] }}...</div>
                         </td>
-                        <td style="padding: 1rem 1.25rem;">
+                        <td>
                             <span class="badge badge-approved" style="font-size: 0.72rem; text-transform: uppercase;">{{ item.room.category.replace('_', ' ') }}</span>
                         </td>
-                        <td style="padding: 1rem 1.25rem;">
+                        <td>
                             <div style="color: #ffffff;"><i class="fas fa-users" style="color: var(--accent-mint); font-size: 0.75rem;"></i> {{ item.room.capacity }} Orang</div>
                             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">{{ item.room.location }}</div>
                         </td>
-                        <td style="padding: 1rem 1.25rem;">
+                        <td>
                             {% if item.tic %}
                                 <div style="font-weight: 600; color: #ffffff;">{{ item.tic.name }}</div>
-                                <div style="font-size: 0.75rem; color: var(--text-muted);">{{ item.tic.email }}</div>
+                                <div class="admin-teacher-email" style="font-size: 0.75rem; color: var(--text-muted);">{{ item.tic.email }}</div>
                             {% else %}
                                 <span class="mono" style="color: var(--text-muted);">—</span>
                             {% endif %}
                         </td>
-                        <td style="padding: 1rem 1.25rem;">
-                            <span class="badge badge-checkedin mono" style="font-weight: 700; letter-spacing: 0.1em; color: #38bdf8;">{{ item.room.qr_pin }}</span>
-                        </td>
-                        <td style="padding: 1rem 1.25rem; text-align: right;">
+                        <td class="admin-room-action">
                             <a href="{{ url_for('room_detail', room_id=item.room.id) }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
                                 <i class="fas fa-eye"></i> Detail
                             </a>

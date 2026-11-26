@@ -53,8 +53,8 @@
                 <p><strong>{{ tic.name }}</strong>{% if tic.department %} ? {{ tic.department }}{% endif %}</p>
                 {% if tic.email %}<p><a href="mailto:{{ tic.email }}">{{ tic.email }}</a></p>{% endif %}
                 {% if tic.contact_phone %}<p>{{ tic.contact_phone }}</p>{% endif %}
-                {% if tic.office_location or tic.office_hours %}
-                    <p>{{ tic.office_location }}{% if tic.office_location and tic.office_hours %} ? {% endif %}{{ tic.office_hours }}</p>
+                {% if tic.office_location %}
+                    <p>{{ tic.office_location }}</p>
                 {% endif %}
             </section>
         {% endif %}
