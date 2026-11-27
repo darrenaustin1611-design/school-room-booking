@@ -26,7 +26,7 @@ if exist "%LOCALAPPDATA%\Python\bin\python.exe" (
 
 echo Using Python: %PYTHON_CMD%
 echo Verifying dependencies...
-"%PYTHON_CMD%" -m pip install flask werkzeug requests openpyxl --quiet
+"%PYTHON_CMD%" -m pip install flask werkzeug requests openpyxl sqlite_web --quiet
 
 echo.
 echo ===================================================
@@ -39,6 +39,7 @@ echo.
 :: Open browser after a 2-second delay so Flask server starts first
 start /b "" powershell -NoProfile -Command "Start-Sleep -Seconds 2; Start-Process 'http://127.0.0.1:5000'"
 
-"%PYTHON_CMD%" app.py
+start "%PYTHON_CMD%" app.py
+sqlite_web school_booking.db
 pause
 
