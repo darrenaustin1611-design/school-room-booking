@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}EduReserve — SMA Marsudirini Bekasi{% endblock %}</title>
+    <title>{% block title %}EduReserve — Marsudirini{% endblock %}</title>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -31,12 +31,12 @@
                 </div>
                 <div>
                     <span class="brand-title">EduReserve</span>
-                    <span class="brand-subtitle">SMA MARSUDIRINI BEKASI</span>
+                    <span class="brand-subtitle">MARSUDIRINI</span>
                 </div>
             </a>
 
             {% if current_user %}
-            <button type="button" class="mobile-toggle-btn" id="mobileMenuBtn" aria-label="Menu navigasi" aria-controls="navLinksMenu" aria-expanded="false" onclick="toggleMobileMenu()">
+            <button type="button" class="mobile-toggle-btn" id="mobileMenuBtn" aria-label="Navigation menu" aria-controls="navLinksMenu" aria-expanded="false" onclick="toggleMobileMenu()">
                 <i class="fas fa-bars" id="mobileMenuIcon" aria-hidden="true"></i>
             </button>
 
@@ -54,7 +54,7 @@
                     </a>
                 </li>
                 
-                {% if current_user.is_student() or current_user.is_admin() %}
+                {% if current_user.is_student() or current_user.is_teacher() or current_user.is_admin() %}
                 <li>
                     <a href="{{ url_for('my_bookings') }}" class="nav-link {% if active_page == 'my_bookings' %}active{% endif %}">
                         <i class="fas fa-calendar-check"></i> Bookings
@@ -85,7 +85,7 @@
                 {% endif %}
                 <li>
                     <a href="{{ url_for('logout') }}" class="nav-link nav-link--logout">
-                        <i class="fas fa-arrow-right-from-bracket" aria-hidden="true"></i> Keluar
+                        <i class="fas fa-arrow-right-from-bracket" aria-hidden="true"></i> Log out
                     </a>
                 </li>
             </ul>
@@ -110,7 +110,7 @@
     </main>
 
     <footer class="site-footer">
-        <p>&copy; 2026 EduReserve &middot; SMA Marsudirini Bekasi</p>
+        <p>&copy; 2026 EduReserve &middot; Marsudirini</p>
     </footer>
 
     <script defer src="{{ url_for('static', filename='js/main.js', v=asset_version) }}"></script>

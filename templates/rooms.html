@@ -56,7 +56,7 @@
 <!-- Spacious Room Cards Grid -->
 <div class="grid-cards room-grid">
     {% for item in room_items %}
-    <div class="card room-card" data-no-reveal style="display: flex; flex-direction: column;">
+    <div class="card room-card catalog-card" data-no-reveal style="{% if loop.length >= 6 %}--catalog-position: {{ 100 * loop.index0 / (loop.length - 1) }}%; {% endif %}display: flex; flex-direction: column;">
         <div class="card-header">
             <div>
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
@@ -88,7 +88,7 @@
 
         <div style="margin-top: auto;">
             <a href="{{ url_for('room_detail', room_id=item.room.id) }}" class="btn btn-primary" style="width: 100%;">
-                <i class="fas fa-calendar-alt" aria-hidden="true"></i> {{ 'Check availability & book' if current_user.is_student() else 'View room schedule' }}
+                <i class="fas fa-calendar-alt" aria-hidden="true"></i> {{ 'Check availability & book' if (current_user.is_student() or current_user.is_teacher()) else 'View room schedule' }}
             </a>
         </div>
     </div>

@@ -57,7 +57,7 @@ class Student(User):
 
     def get_role_display(self):
         # Polymorphic override for Student
-        return f"Siswa ({self.grade_level})"
+        return f"Student ({self.grade_level})"
 
     def get_home_route(self):
         # Polymorphic override for Student landing page
@@ -93,8 +93,8 @@ class Teacher(User):
     def get_role_display(self):
         # Polymorphic override for Teacher
         if self.is_homeroom_teacher():
-            return f"Wali Kelas ({self.department})"
-        return f"Guru Mata Pelajaran ({self.department})"
+            return f"Homeroom Teacher ({self.department})"
+        return f"Subject Teacher ({self.department})"
 
     def get_home_route(self):
         # Polymorphic override for Teacher landing page
@@ -125,7 +125,7 @@ class Admin(User):
 
     def get_role_display(self):
         # Polymorphic override for Admin
-        return "Administrator Sistem & Tata Usaha"
+        return "System Administrator & School Office"
 
     def get_home_route(self):
         # Polymorphic override: Admin lands directly on the Data Center

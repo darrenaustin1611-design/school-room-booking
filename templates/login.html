@@ -5,12 +5,8 @@
 {% block content %}
 <div style="max-width: 540px; margin: 3rem auto; position: relative;">
     
-    <!-- Editorial Accent Badge -->
     <div style="text-align: center; margin-bottom: 2rem;">
-        <span class="mono-tag" style="background: rgba(212, 246, 235, 0.08); padding: 0.35rem 0.9rem; border-radius: var(--radius-pill); border: 1px solid var(--border-subtle);">
-            CAMPUS IDENTITY INFRASTRUCTURE
-        </span>
-        <h1 style="font-size: 2.8rem; margin-top: 0.8rem; margin-bottom: 0.5rem;">
+        <h1 style="font-size: 2.8rem; margin-bottom: 0.5rem;">
             Sign in to <em>EduReserve</em>
         </h1>
         <p style="color: var(--text-secondary); font-size: 0.95rem;">
@@ -19,40 +15,40 @@
     </div>
 
     <!-- Centered Glass Panel -->
-    <div class="card" style="padding: 3rem 2.5rem;">
+    <div class="card quiet-card" style="padding: 3rem 2.5rem;">
         <form action="{{ url_for('login') }}" method="POST">
             <div class="form-group">
                 <label class="form-label" for="loginEmail">
-                    Email Sekolah / NIS Siswa
+                    School Email / Student ID
                 </label>
-                <input type="text" name="email" class="form-input" placeholder="252610112@smamarsudirinibekasi.sch.id atau NIS" required id="loginEmail" autocomplete="username">
+                <input type="text" name="email" class="form-input" placeholder="student2@example.com or Student ID" required id="loginEmail" autocomplete="username">
                 <span class="mono" style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.35rem;">
-                    Siswa dapat login menggunakan NIS (contoh: 252610112) atau email lengkap.
+                    Students can sign in with their Student ID (for example, 252610112) or full email address.
                 </span>
             </div>
 
             <div class="form-group" style="margin-bottom: 2rem;">
                 <label class="form-label" for="loginPassword">
-                    Kata Sandi / Password
+                    Password
                 </label>
                 <input type="password" name="password" class="form-input" placeholder="••••••••" required id="loginPassword" autocomplete="current-password">
             </div>
 
             <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.9rem; font-size: 1rem;">
-                Masuk ke EduReserve <i class="fas fa-arrow-right"></i>
+                Sign in to EduReserve <i class="fas fa-arrow-right"></i>
             </button>
         </form>
 
         <div style="position: relative; text-align: center; margin: 2.5rem 0 2rem;">
             <div style="height: 1px; background: var(--border-subtle); position: absolute; top: 50%; left: 0; right: 0;"></div>
             <span class="mono" style="position: relative; background: #0f2c22; padding: 0 1rem; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em;">
-                Akun Demo Cepat
+                Quick Demo Accounts
             </span>
         </div>
 
         <!-- Quick Demo One-Click Selectors -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
-            <span class="mono" style="font-size: 0.72rem; color: #10b981; font-weight: 600;">PILIH AKUN SISWA (GRADE 11):</span>
+            <span class="mono" style="font-size: 0.72rem; color: #10b981; font-weight: 600;">SELECT A STUDENT ACCOUNT (GRADE 11):</span>
         </div>
         <div class="quick-demo-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 1.25rem;">
             <button onclick="fillLogin('252610112', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.55rem 0.75rem; justify-content: flex-start;">
@@ -70,23 +66,23 @@
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
-            <span class="mono" style="font-size: 0.72rem; color: #38bdf8; font-weight: 600;">PILIH GURU / WALAS / PIC & ADMIN:</span>
+            <span class="mono" style="font-size: 0.72rem; color: #38bdf8; font-weight: 600;">SELECT A TEACHER / HOMEROOM / PIC / ADMIN:</span>
         </div>
         <div class="quick-demo-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
-            <button onclick="fillLogin('hendrasetiawan@smamarsudirinibekasi.sch.id', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.55rem 0.75rem; justify-content: flex-start;">
-                <i class="fas fa-user-tie" style="color: #38bdf8; font-size: 0.75rem;"></i> Pak Hendra (Walas 11-A)
+            <button onclick="fillLogin('teacher9@example.com', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.55rem 0.75rem; justify-content: flex-start;">
+                <i class="fas fa-user-tie" style="color: #38bdf8; font-size: 0.75rem;"></i> Mr. Hendra (Homeroom 11-A)
             </button>
-            <button onclick="fillLogin('budisantoso@smamarsudirinibekasi.sch.id', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.55rem 0.75rem; justify-content: flex-start;">
-                <i class="fas fa-user-tie" style="color: #38bdf8; font-size: 0.75rem;"></i> Pak Budi (Walas 11-B)
+            <button onclick="fillLogin('teacher7@example.com', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.55rem 0.75rem; justify-content: flex-start;">
+                <i class="fas fa-user-tie" style="color: #38bdf8; font-size: 0.75rem;"></i> Mr. Budi (Homeroom 11-B)
             </button>
-            <button onclick="fillLogin('srirahayu@smamarsudirinibekasi.sch.id', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.55rem 0.75rem; justify-content: flex-start;">
-                <i class="fas fa-user-tie" style="color: #38bdf8; font-size: 0.75rem;"></i> Bu Theresia (Walas 11-C)
+            <button onclick="fillLogin('teacher8@example.com', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.55rem 0.75rem; justify-content: flex-start;">
+                <i class="fas fa-user-tie" style="color: #38bdf8; font-size: 0.75rem;"></i> Ms. Theresia (Homeroom 11-C)
             </button>
-            <button onclick="fillLogin('thorne@smamarsudirinibekasi.sch.id', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.55rem 0.75rem; justify-content: flex-start;">
-                <i class="fas fa-flask" style="color: #fbbf24; font-size: 0.75rem;"></i> Dr. Thorne (PIC Fisika)
+            <button onclick="fillLogin('teacher1@example.com', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.55rem 0.75rem; justify-content: flex-start;">
+                <i class="fas fa-flask" style="color: #fbbf24; font-size: 0.75rem;"></i> Dr. Thorne (Physics PIC)
             </button>
-            <button onclick="fillLogin('admin@smamarsudirinibekasi.sch.id', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.55rem 0.75rem; grid-column: span 2; justify-content: center; background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
-                <i class="fas fa-shield-halved"></i> Administrator & Tata Usaha (Excel Sync)
+            <button onclick="fillLogin('admin@example.com', 'password123')" type="button" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.55rem 0.75rem; grid-column: span 2; justify-content: center; background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: #38bdf8;">
+                <i class="fas fa-shield-halved"></i> Administrator & School Office (Excel Sync)
             </button>
         </div>
     </div>

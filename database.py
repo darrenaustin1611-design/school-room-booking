@@ -93,9 +93,66 @@ def init_db():
     )
     ''')
 
+    init_booking_history(conn)
     conn.commit()
     seed_demo_data(conn)
     conn.close()
+
+def trim_personal_bookings(conn, user_id):
+    conn.execute("""
+        DELETE FROM bookings
+        WHERE status IN ('COMPLETED','REJECTED','EXPIRED','CANCELLED')
+          AND id IN (SELECT id FROM bookings WHERE primary_student_id = ?
+                     ORDER BY id DESC LIMIT -1 OFFSET 5)
+    """, (user_id,))
+
+
+def init_booking_history(conn):
+    conn.execute("BEGIN IMMEDIATE")
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='pic_history'").fetchone():
+        return
+
+    conn.execute("""
+        CREATE TABLE pic_history (
+            id INTEGER PRIMARY KEY, booking_id INTEGER NOT NULL UNIQUE,
+            pic_id INTEGER NOT NULL, booker_id INTEGER NOT NULL, room_id INTEGER NOT NULL,
+            booking_date TEXT NOT NULL, start_time TEXT NOT NULL, end_time TEXT NOT NULL,
+            decision TEXT NOT NULL
+        )
+    """)
+    conn.execute("CREATE INDEX pic_history_recent ON pic_history(pic_id, id DESC)")
+    conn.execute("""
+        CREATE TRIGGER trim_pic_history AFTER INSERT ON pic_history BEGIN
+            DELETE FROM pic_history WHERE id IN (
+                SELECT id FROM pic_history WHERE pic_id = NEW.pic_id
+                ORDER BY id DESC LIMIT -1 OFFSET 25
+            );
+        END
+    """)
+    conn.execute("""
+        CREATE TRIGGER record_pic_decision AFTER UPDATE OF status ON bookings
+        WHEN OLD.status = 'PENDING' AND NEW.status IN ('APPROVED','REJECTED') BEGIN
+            INSERT INTO pic_history (booking_id,pic_id,booker_id,room_id,booking_date,start_time,end_time,decision)
+            VALUES (NEW.id,NEW.teacher_in_charge_id,NEW.primary_student_id,NEW.room_id,
+                    NEW.booking_date,NEW.start_time,NEW.end_time,NEW.status);
+        END
+    """)
+    # Existing decisions precede the new log. Use the recorded decision notification
+    # time where available, including bookings that have since finished.
+    conn.execute("""
+        INSERT INTO pic_history (booking_id,pic_id,booker_id,room_id,booking_date,start_time,end_time,decision)
+        SELECT b.id,b.teacher_in_charge_id,b.primary_student_id,b.room_id,b.booking_date,b.start_time,b.end_time,
+               CASE WHEN b.status='REJECTED' OR n.title='Booking Declined' THEN 'REJECTED' ELSE 'APPROVED' END
+        FROM bookings b LEFT JOIN notifications n ON n.id = (
+            SELECT MAX(id) FROM notifications WHERE booking_id=b.id AND type='STATUS_UPDATE'
+                AND title IN ('Booking Approved!', 'Booking Declined')
+        )
+        WHERE n.id IS NOT NULL OR b.status IN ('APPROVED','REJECTED','CHECKED_IN','COMPLETED','PENDING_CONFIRMATION','EXPIRED')
+        ORDER BY COALESCE(n.created_at,b.created_at), b.id
+    """)
+    for row in conn.execute("SELECT DISTINCT primary_student_id FROM bookings").fetchall():
+        trim_personal_bookings(conn, row[0])
+
 
 def seed_demo_data(conn, force=False):
     cursor = conn.cursor()
@@ -110,6 +167,7 @@ def seed_demo_data(conn, force=False):
 
     # If force or upgrading: clear bookings, users, rooms safely
     if force or user_count > 0:
+        cursor.execute("DELETE FROM pic_history")
         cursor.execute("DELETE FROM bookings")
         cursor.execute("DELETE FROM notifications")
         cursor.execute("DELETE FROM rooms")
@@ -119,50 +177,50 @@ def seed_demo_data(conn, force=False):
     # 1. Teachers (15 dedicated teachers with complete contact & room assignment)
     teachers = [
         # 1. Dr. Yohanes Aris Thorne
-        ("Dr. Yohanes Aris Thorne, M.Pd.", "thorne@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Fisika & Sains Terapan", "Gedung Laboratorium Lt. 2 (Lab Fisika)", "0812-1111-2021", "Senin - Jumat 14:00 - 16:00"),
+        ("Dr. Yohanes Aris Thorne, M.Pd.", "teacher1@example.com", default_pw, "teacher",
+         "Physics & Applied Science", "Laboratory Building, 2nd Floor (Physics Lab)", "1111-2222-3333", "Monday - Friday, 14:00 - 16:00"),
         # 2. Dra. Maria Elena Rostova
-        ("Dra. Maria Elena Rostova, M.Si.", "rostova@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Kimia & Ilmu Hayati", "Gedung Laboratorium Lt. 1 (Lab Kimia)", "0812-2222-3045", "Senin - Kamis 13:00 - 15:00"),
+        ("Dra. Maria Elena Rostova, M.Si.", "teacher2@example.com", default_pw, "teacher",
+         "Chemistry & Life Sciences", "Laboratory Building, 1st Floor (Chemistry Lab)", "1111-2222-3333", "Monday - Thursday, 13:00 - 15:00"),
         # 3. David Chen, S.Pd.
-        ("David Chen, S.Pd.", "chen@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Matematika & Seni Teater", "Gedung Utama Lt. 3 (Ruang Guru 302)", "0812-5555-9900", "Setiap Hari 15:30 - 16:30"),
+        ("David Chen, S.Pd.", "teacher3@example.com", default_pw, "teacher",
+         "Mathematics & Theatre Arts", "Main Building, 3rd Floor (Faculty Room 302)", "1111-2222-3333", "Daily, 15:30 - 16:30"),
         # 4. Sarah Jenkins, M.Hum.
-        ("Sarah Jenkins, M.Hum.", "jenkins@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Bahasa & Sastra Inggris", "Sayap Humaniora Lt. 1 (Ruang 110)", "0812-4444-1122", "Senin, Rabu, Jumat 15:00 - 16:00"),
+        ("Sarah Jenkins, M.Hum.", "teacher4@example.com", default_pw, "teacher",
+         "English Language & Literature", "Humanities Wing, 1st Floor (Room 110)", "1111-2222-3333", "Monday, Wednesday, Friday, 15:00 - 16:00"),
         # 5. Coach Marcus Vance, S.Pd.
-        ("Coach Marcus Vance, S.Pd.", "vance@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Pendidikan Jasmani & Olahraga (PJOK)", "Gedung Gymnasium Lt. 1 (Kantor Olahraga)", "0812-8888-5511", "Setiap Hari 14:00 - 17:00"),
+        ("Coach Marcus Vance, S.Pd.", "teacher5@example.com", default_pw, "teacher",
+         "Physical Education & Sports", "Gymnasium, 1st Floor (Sports Office)", "1111-2222-3333", "Daily, 14:00 - 17:00"),
         # 6. Alex Rivera, S.Kom.
-        ("Alex Rivera, S.Kom.", "rivera@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Digital Media & Informatika Multimedia", "Innovation Hub Lt. 2 (Ruang 204)", "0812-7777-8888", "Selasa - Kamis 15:00 - 17:00"),
+        ("Alex Rivera, S.Kom.", "teacher6@example.com", default_pw, "teacher",
+         "Digital Media & Multimedia Computing", "Innovation Hub, 2nd Floor (Room 204)", "1111-2222-3333", "Tuesday - Thursday, 15:00 - 17:00"),
         # 7. FX. Budi Santoso, M.Si. (Wali Kelas 11-B)
-        ("FX. Budi Santoso, M.Si.", "budisantoso@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Kimia Terapan & Pembina OSIS", "Ruang Guru Pusat Lt. 2 (Meja 14)", "0813-8821-4402", "Senin - Jumat 14:00 - 16:00"),
+        ("FX. Budi Santoso, M.Si.", "teacher7@example.com", default_pw, "teacher",
+         "Applied Chemistry & Student Council Advisor", "Central Faculty Room, 2nd Floor (Desk 14)", "1111-2222-3333", "Monday - Friday, 14:00 - 16:00"),
         # 8. Dra. Theresia Sri Rahayu (Wali Kelas 11-C)
-        ("Dra. Theresia Sri Rahayu", "srirahayu@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Biologi Terapan & Adiwiyata", "Ruang Guru Pusat Lt. 2 (Meja 08)", "0812-9934-5513", "Senin - Kamis 13:30 - 15:30"),
+        ("Dra. Theresia Sri Rahayu", "teacher8@example.com", default_pw, "teacher",
+         "Applied Biology & Environmental Program", "Central Faculty Room, 2nd Floor (Desk 08)", "1111-2222-3333", "Monday - Thursday, 13:30 - 15:30"),
         # 9. Antonius Hendra Setiawan, S.Pd. (Wali Kelas 11-A)
-        ("Antonius Hendra Setiawan, S.Pd.", "hendrasetiawan@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Fisika Modern & Pembina Robotika", "Ruang Guru Pusat Lt. 2 (Meja 22)", "0811-7723-9901", "Setiap Hari 15:00 - 16:30"),
+        ("Antonius Hendra Setiawan, S.Pd.", "teacher9@example.com", default_pw, "teacher",
+         "Modern Physics & Robotics Advisor", "Central Faculty Room, 2nd Floor (Desk 22)", "1111-2222-3333", "Daily, 15:00 - 16:30"),
         # 10. Ignatius Wisnu Wardhana, S.Pd.
-        ("Ignatius Wisnu Wardhana, S.Pd.", "wisnu@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Sejarah Indonesia & Sosiologi", "Ruang Guru Pusat Lt. 1 (Meja 03)", "0812-3344-5566", "Senin & Rabu 14:30 - 16:00"),
+        ("Ignatius Wisnu Wardhana, S.Pd.", "teacher10@example.com", default_pw, "teacher",
+         "Indonesian History & Sociology", "Central Faculty Room, 1st Floor (Desk 03)", "1111-2222-3333", "Monday & Wednesday, 14:30 - 16:00"),
         # 11. Maria Fransisca Dewi, M.Pd.
-        ("Maria Fransisca Dewi, M.Pd.", "dewi@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Bahasa & Sastra Indonesia", "Ruang Guru Pusat Lt. 1 (Meja 05)", "0813-4455-6677", "Selasa & Kamis 14:00 - 15:30"),
+        ("Maria Fransisca Dewi, M.Pd.", "teacher11@example.com", default_pw, "teacher",
+         "Indonesian Language & Literature", "Central Faculty Room, 1st Floor (Desk 05)", "1111-2222-3333", "Tuesday & Thursday, 14:00 - 15:30"),
         # 12. Yulius Eko Prasetyo, S.Kom.
-        ("Yulius Eko Prasetyo, S.Kom.", "ekoprasetyo@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Informatika & Coding AI", "Innovation Hub Lt. 1 (Ruang 102)", "0812-5566-7788", "Rabu - Jumat 15:00 - 16:30"),
+        ("Yulius Eko Prasetyo, S.Kom.", "teacher12@example.com", default_pw, "teacher",
+         "Computer Science & AI Programming", "Innovation Hub, 1st Floor (Room 102)", "1111-2222-3333", "Wednesday - Friday, 15:00 - 16:30"),
         # 13. Bernadetta Rini Lestari, S.Pd.
-        ("Bernadetta Rini Lestari, S.Pd.", "rinilestari@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Ekonomi & Akuntansi", "Ruang Guru Pusat Lt. 2 (Meja 18)", "0813-6677-8899", "Senin - Kamis 14:00 - 16:00"),
+        ("Bernadetta Rini Lestari, S.Pd.", "teacher13@example.com", default_pw, "teacher",
+         "Economics & Accounting", "Central Faculty Room, 2nd Floor (Desk 18)", "1111-2222-3333", "Monday - Thursday, 14:00 - 16:00"),
         # 14. Stefanus Bagus Wicaksono, S.Pd.
-        ("Stefanus Bagus Wicaksono, S.Pd.", "baguswicaksono@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Geografi & Kebumian", "Ruang Guru Pusat Lt. 1 (Meja 12)", "0812-7788-9900", "Selasa & Jumat 14:30 - 16:00"),
+        ("Stefanus Bagus Wicaksono, S.Pd.", "teacher14@example.com", default_pw, "teacher",
+         "Geography & Earth Science", "Central Faculty Room, 1st Floor (Desk 12)", "1111-2222-3333", "Tuesday & Friday, 14:30 - 16:00"),
         # 15. Yohana Agnes Pratiwi, M.Pd.
-        ("Yohana Agnes Pratiwi, M.Pd.", "agnespratiwi@smamarsudirinibekasi.sch.id", default_pw, "teacher",
-         "Seni Rupa & Desain Kreatif", "Sayap Seni Lt. 1 (Studio Seni)", "0813-8899-0011", "Senin - Rabu 15:00 - 16:30"),
+        ("Yohana Agnes Pratiwi, M.Pd.", "teacher15@example.com", default_pw, "teacher",
+         "Visual Arts & Creative Design", "Arts Wing, 1st Floor (Art Studio)", "1111-2222-3333", "Monday - Wednesday, 15:00 - 16:30"),
     ]
 
     teacher_id_map = {}
@@ -177,24 +235,24 @@ def seed_demo_data(conn, force=False):
     cursor.execute('''
     INSERT INTO users (name, email, password_hash, role)
     VALUES (?, ?, ?, ?)
-    ''', ("System Administrator & Tata Usaha", "admin@smamarsudirinibekasi.sch.id", default_pw, "admin"))
+    ''', ("System Administrator & School Office", "admin@example.com", default_pw, "admin"))
 
     # 2. Rooms - Facilities & Laboratories
     facilities_data = [
-        ("Physics Laboratory", "science_lab", 30, "Science Hall 2nd Floor", teacher_id_map["thorne@smamarsudirinibekasi.sch.id"], "2026", 0, "Advanced physics experimental lab with precision laser tables and mechanics gear.", "flask", json.dumps({"lab_type": "Physics", "safety_guidelines": "Safety goggles required. No food or drinks."})),
-        ("Chemistry Laboratory", "science_lab", 32, "Science Hall 1st Floor", teacher_id_map["rostova@smamarsudirinibekasi.sch.id"], "3045", 0, "Fume hoods, Bunsen burners, and titration stations.", "flask", json.dumps({"lab_type": "Chemistry", "safety_guidelines": "Lab coat and goggles mandatory."})),
-        ("Biology Laboratory", "science_lab", 28, "Science Hall 1st Floor", teacher_id_map["rostova@smamarsudirinibekasi.sch.id"], "4089", 0, "High-resolution optical microscopes and specimen collections.", "flask", json.dumps({"lab_type": "Biology", "safety_guidelines": "Wash hands before and after sessions."})),
-        ("Language Laboratory", "science_lab", 25, "Humanities Wing 102", teacher_id_map["jenkins@smamarsudirinibekasi.sch.id"], "1122", 0, "Acoustic audio booths with digital language learning software.", "headphones", json.dumps({"lab_type": "Language", "safety_guidelines": "Use provided alcohol wipes on headsets."})),
+        ("Physics Laboratory", "science_lab", 30, "Science Hall 2nd Floor", teacher_id_map["teacher1@example.com"], "2026", 0, "Advanced physics experimental lab with precision laser tables and mechanics gear.", "flask", json.dumps({"lab_type": "Physics", "safety_guidelines": "Safety goggles required. No food or drinks."})),
+        ("Chemistry Laboratory", "science_lab", 32, "Science Hall 1st Floor", teacher_id_map["teacher2@example.com"], "3045", 0, "Fume hoods, Bunsen burners, and titration stations.", "flask", json.dumps({"lab_type": "Chemistry", "safety_guidelines": "Lab coat and goggles mandatory."})),
+        ("Biology Laboratory", "science_lab", 28, "Science Hall 1st Floor", teacher_id_map["teacher2@example.com"], "4089", 0, "High-resolution optical microscopes and specimen collections.", "flask", json.dumps({"lab_type": "Biology", "safety_guidelines": "Wash hands before and after sessions."})),
+        ("Language Laboratory", "science_lab", 25, "Humanities Wing 102", teacher_id_map["teacher4@example.com"], "1122", 0, "Acoustic audio booths with digital language learning software.", "headphones", json.dumps({"lab_type": "Language", "safety_guidelines": "Use provided alcohol wipes on headsets."})),
         
-        ("Auditorium", "event_space", 350, "Main Campus Center", teacher_id_map["chen@smamarsudirinibekasi.sch.id"], "9900", 0, "Grand stage, surround audio system, and theatrical lighting system.", "theater-masks", json.dumps({"capacity_rules": "Requires AV technician approval for lighting control."})),
-        ("Library Conference Room", "event_space", 16, "Central Library 2nd Floor", teacher_id_map["jenkins@smamarsudirinibekasi.sch.id"], "7766", 0, "Quiet glass enclosure with conference camera and whiteboard.", "book-reader", json.dumps({})),
+        ("Auditorium", "event_space", 350, "Main Campus Center", teacher_id_map["teacher3@example.com"], "9900", 0, "Grand stage, surround audio system, and theatrical lighting system.", "theater-masks", json.dumps({"capacity_rules": "Requires AV technician approval for lighting control."})),
+        ("Library Conference Room", "event_space", 16, "Central Library 2nd Floor", teacher_id_map["teacher4@example.com"], "7766", 0, "Quiet glass enclosure with conference camera and whiteboard.", "book-reader", json.dumps({})),
         
-        ("Podcast Recording Studio", "media_room", 6, "Innovation Hub 201", teacher_id_map["rivera@smamarsudirinibekasi.sch.id"], "8811", 0, "Soundproof recording studio with Shure SM7B mics and Rodecaster Pro.", "podcast", json.dumps({"equipment": ["Rodecaster Pro", "Shure SM7B Mics x4", "Headphone Distribution Amp"]})),
-        ("Audiovisual Production Room", "media_room", 12, "Innovation Hub 202", teacher_id_map["rivera@smamarsudirinibekasi.sch.id"], "8822", 0, "4K video editing suite with DaVinci Resolve and green screen booth.", "film", json.dumps({"equipment": ["Green Screen Studio", "4K Video Editing Rig", "Studio Softlights"]})),
-        ("Esports & Gaming Room", "media_room", 20, "Student Union 3rd Floor", teacher_id_map["rivera@smamarsudirinibekasi.sch.id"], "8833", 0, "High-performance PC rigs, 240Hz monitors, and team shoutcaster booth.", "gamepad", json.dumps({"equipment": ["240Hz Gaming PCs x10", "Console Gaming Station", "Shoutcaster Desk"]})),
+        ("Podcast Recording Studio", "media_room", 6, "Innovation Hub 201", teacher_id_map["teacher6@example.com"], "8811", 0, "Soundproof recording studio with Shure SM7B mics and Rodecaster Pro.", "podcast", json.dumps({"equipment": ["Rodecaster Pro", "Shure SM7B Mics x4", "Headphone Distribution Amp"]})),
+        ("Audiovisual Production Room", "media_room", 12, "Innovation Hub 202", teacher_id_map["teacher6@example.com"], "8822", 0, "4K video editing suite with DaVinci Resolve and green screen booth.", "film", json.dumps({"equipment": ["Green Screen Studio", "4K Video Editing Rig", "Studio Softlights"]})),
+        ("Esports & Gaming Room", "media_room", 20, "Student Union 3rd Floor", teacher_id_map["teacher6@example.com"], "8833", 0, "High-performance PC rigs, 240Hz monitors, and team shoutcaster booth.", "gamepad", json.dumps({"equipment": ["240Hz Gaming PCs x10", "Console Gaming Station", "Shoutcaster Desk"]})),
         
-        ("Basketball Court (Indoor)", "sports_facility", 40, "Gymnasium Main Hall", teacher_id_map["vance@smamarsudirinibekasi.sch.id"], "5511", 0, "Hardwood maple court with digital scoreboard.", "basketball-ball", json.dumps({})),
-        ("Volleyball Court (Indoor)", "sports_facility", 30, "Gymnasium Court B", teacher_id_map["vance@smamarsudirinibekasi.sch.id"], "5522", 0, "Regulation net setup with padded posts.", "volleyball-ball", json.dumps({})),
+        ("Basketball Court (Indoor)", "sports_facility", 40, "Gymnasium Main Hall", teacher_id_map["teacher5@example.com"], "5511", 0, "Hardwood maple court with digital scoreboard.", "basketball-ball", json.dumps({})),
+        ("Volleyball Court (Indoor)", "sports_facility", 30, "Gymnasium Court B", teacher_id_map["teacher5@example.com"], "5522", 0, "Regulation net setup with padded posts.", "volleyball-ball", json.dumps({})),
     ]
 
     for f in facilities_data:
@@ -211,15 +269,15 @@ def seed_demo_data(conn, force=False):
     # 11-C -> Dra. Theresia Sri Rahayu (Walas Christiano Rafael Koroh)
     # 12-A -> Coach Marcus Vance, 12-B -> Alex Rivera, 12-C -> Dra. Maria Elena Rostova
     homeroom_assignment_map = {
-        "10-A": teacher_id_map["chen@smamarsudirinibekasi.sch.id"],
-        "10-B": teacher_id_map["jenkins@smamarsudirinibekasi.sch.id"],
-        "10-C": teacher_id_map["thorne@smamarsudirinibekasi.sch.id"],
-        "11-A": teacher_id_map["hendrasetiawan@smamarsudirinibekasi.sch.id"],
-        "11-B": teacher_id_map["budisantoso@smamarsudirinibekasi.sch.id"],
-        "11-C": teacher_id_map["srirahayu@smamarsudirinibekasi.sch.id"],
-        "12-A": teacher_id_map["vance@smamarsudirinibekasi.sch.id"],
-        "12-B": teacher_id_map["rivera@smamarsudirinibekasi.sch.id"],
-        "12-C": teacher_id_map["rostova@smamarsudirinibekasi.sch.id"]
+        "10-A": teacher_id_map["teacher3@example.com"],
+        "10-B": teacher_id_map["teacher4@example.com"],
+        "10-C": teacher_id_map["teacher1@example.com"],
+        "11-A": teacher_id_map["teacher9@example.com"],
+        "11-B": teacher_id_map["teacher7@example.com"],
+        "11-C": teacher_id_map["teacher8@example.com"],
+        "12-A": teacher_id_map["teacher5@example.com"],
+        "12-B": teacher_id_map["teacher6@example.com"],
+        "12-C": teacher_id_map["teacher2@example.com"]
     }
 
     room_name_to_id = {}
@@ -231,7 +289,7 @@ def seed_demo_data(conn, force=False):
             class_key = f"{g}-{s}"
             class_name = f"Class {class_key}"
             location = f"Academic Block {g}, Room {s}01"
-            tic_id = homeroom_assignment_map.get(class_key, teacher_id_map["thorne@smamarsudirinibekasi.sch.id"])
+            tic_id = homeroom_assignment_map.get(class_key, teacher_id_map["teacher1@example.com"])
 
             cursor.execute('''
             INSERT INTO rooms (name, category, capacity, location, teacher_in_charge_id, qr_pin, requires_after_hours_only, description, icon, extra_data)
@@ -250,20 +308,20 @@ def seed_demo_data(conn, force=False):
     # 4. Students (Using user's exact requested roster, mapped to 11-A, 11-B, 11-C)
     students_data = [
         # Joe Mesiano Hoosan - Class 11-B (Wali Kelas: FX. Budi Santoso)
-        ("Joe Mesiano Hoosan", "252610153@smamarsudirinibekasi.sch.id", default_pw, "252610153", "Grade 11",
-         teacher_id_map["budisantoso@smamarsudirinibekasi.sch.id"], room_name_to_id["Class 11-B"]),
+        ("Joe Mesiano Hoosan", "student1@example.com", default_pw, "252610153", "Grade 11",
+         teacher_id_map["teacher7@example.com"], room_name_to_id["Class 11-B"]),
 
         # Darren Austin Rinaldy - Class 11-A (Wali Kelas: Antonius Hendra Setiawan)
-        ("Darren Austin Rinaldy", "252610112@smamarsudirinibekasi.sch.id", default_pw, "252610112", "Grade 11",
-         teacher_id_map["hendrasetiawan@smamarsudirinibekasi.sch.id"], room_name_to_id["Class 11-A"]),
+        ("Darren Austin Rinaldy", "student2@example.com", default_pw, "252610112", "Grade 11",
+         teacher_id_map["teacher9@example.com"], room_name_to_id["Class 11-A"]),
 
         # Terrius Konstantine - Class 11-A (Wali Kelas: Antonius Hendra Setiawan)
-        ("Terrius Konstantine", "252610134@smamarsudirinibekasi.sch.id", default_pw, "252610134", "Grade 11",
-         teacher_id_map["hendrasetiawan@smamarsudirinibekasi.sch.id"], room_name_to_id["Class 11-A"]),
+        ("Terrius Konstantine", "student3@example.com", default_pw, "252610134", "Grade 11",
+         teacher_id_map["teacher9@example.com"], room_name_to_id["Class 11-A"]),
 
         # Christiano Rafael Koroh - Class 11-C (Wali Kelas: Dra. Theresia Sri Rahayu)
-        ("Christiano Rafael Koroh", "252610213@smamarsudirinibekasi.sch.id", default_pw, "252610213", "Grade 11",
-         teacher_id_map["srirahayu@smamarsudirinibekasi.sch.id"], room_name_to_id["Class 11-C"]),
+        ("Christiano Rafael Koroh", "student4@example.com", default_pw, "252610213", "Grade 11",
+         teacher_id_map["teacher8@example.com"], room_name_to_id["Class 11-C"]),
     ]
 
     for s in students_data:

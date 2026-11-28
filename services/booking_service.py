@@ -1,7 +1,7 @@
 import json
 from contextlib import closing
 from datetime import datetime, timedelta
-from database import get_db
+from database import get_db, trim_personal_bookings
 from models import Booking, BookingStatus, Notification
 from services.room_service import RoomService
 from services.auth_service import AuthService
@@ -13,10 +13,10 @@ class BookingService:
         conn = get_db()
         cursor = conn.cursor()
 
-        student = AuthService.get_user_by_id(primary_student_id)
-        if not student or not student.is_student():
+        booker = AuthService.get_user_by_id(primary_student_id)
+        if not booker or not (booker.is_student() or booker.is_teacher()):
             conn.close()
-            return None, "Invalid primary student user."
+            return None, "Invalid booking requester."
 
         room = RoomService.get_room_by_id(room_id)
         if not room:
@@ -34,6 +34,9 @@ class BookingService:
             fmt = "%H:%M"
             t1 = datetime.strptime(start_time, fmt)
             t2 = datetime.strptime(end_time, fmt)
+            if t1.minute % 10 or t2.minute % 10:
+                conn.close()
+                return None, "Start and end times must use 10-minute intervals."
             duration_minutes = (t2 - t1).total_seconds() / 60
             if duration_minutes <= 0:
                 conn.close()
@@ -42,14 +45,14 @@ class BookingService:
             conn.close()
             return None, "Invalid time format. Use HH:MM."
 
-        # 3. Check if primary student holds an active booking (1 active booking limit)
+        # 3. Check if the requester holds an active booking (1 active booking limit)
         active_statuses = "('PENDING', 'APPROVED', 'CHECKED_IN', 'PENDING_CONFIRMATION')"
         conn.execute("BEGIN IMMEDIATE")
         
         cursor.execute(f"SELECT id FROM bookings WHERE primary_student_id = ? AND status IN {active_statuses}", (primary_student_id,))
         if cursor.fetchone():
             conn.close()
-            return None, "You already have an active booking. Students can only hold 1 active booking at a time."
+            return None, "You already have an active booking. Each requester can only hold 1 active booking at a time."
 
         # 4. Check Room Schedule Overlap
         cursor.execute(f"""
@@ -70,8 +73,8 @@ class BookingService:
                 return None, f"Room '{room.name}' is already booked during {eb['start_time']} - {eb['end_time']} on {booking_date}."
 
         # 5. Resolve Approval Routing
-        tic_id = room.get_effective_tic_id(student)
-        homeroom_teacher_id = student.homeroom_teacher_id or tic_id
+        tic_id = room.get_effective_tic_id(booker)
+        homeroom_teacher_id = getattr(booker, 'homeroom_teacher_id', None) or tic_id
         now_str = datetime.now().isoformat()
 
         cursor.execute("""
@@ -81,6 +84,7 @@ class BookingService:
         """, (primary_student_id, room_id, booking_date, start_time, end_time, purpose, tic_id, homeroom_teacher_id, now_str))
 
         booking_id = cursor.lastrowid
+        trim_personal_bookings(conn, primary_student_id)
 
         # 7. Create Notifications
         # A) Request to Teacher in Charge
@@ -88,7 +92,7 @@ class BookingService:
             INSERT INTO notifications (user_id, title, message, type, booking_id, created_at)
             VALUES (?, ?, ?, 'APPROVAL_REQUEST', ?, ?)
         """, (tic_id, "New Booking Approval Needed", 
-              f"Student {student.name} requested to book '{room.name}' on {booking_date} ({start_time}-{end_time}).", booking_id, now_str))
+              f"{booker.get_role_display()} {booker.name} requested to book '{room.name}' on {booking_date} ({start_time}-{end_time}).", booking_id, now_str))
 
         # B) FYI to Homeroom Teacher (if different from TIC)
         if homeroom_teacher_id and homeroom_teacher_id != tic_id:
@@ -96,7 +100,7 @@ class BookingService:
                 INSERT INTO notifications (user_id, title, message, type, booking_id, created_at)
                 VALUES (?, ?, ?, 'FYI_NOTIFICATION', ?, ?)
             """, (homeroom_teacher_id, "FYI: Homeroom Student Booking", 
-                  f"Your homeroom student {student.name} requested room '{room.name}' on {booking_date}.", booking_id, now_str))
+                  f"Your homeroom student {booker.name} requested room '{room.name}' on {booking_date}.", booking_id, now_str))
 
         conn.commit()
         conn.close()
@@ -123,20 +127,8 @@ class BookingService:
         conn = get_db()
         cursor = conn.cursor()
         
-        if user.is_student():
-            # Get bookings where student is primary OR listed as co-booker
-            cursor.execute("SELECT * FROM bookings ORDER BY id DESC")
-            all_rows = cursor.fetchall()
-            user_bookings = []
-            for r in all_rows:
-                b = BookingService._instantiate_booking(r)
-                if b.is_authorized_student(user.id, user.student_id_number):
-                    user_bookings.append(b)
-            conn.close()
-            return user_bookings
-        
-        elif user.is_teacher():
-            cursor.execute("SELECT * FROM bookings WHERE teacher_in_charge_id = ? OR homeroom_teacher_id = ? ORDER BY id DESC", (user.id, user.id))
+        if user.is_student() or user.is_teacher():
+            cursor.execute("SELECT * FROM bookings WHERE primary_student_id = ? ORDER BY id DESC LIMIT 5", (user.id,))
             rows = cursor.fetchall()
             conn.close()
             return [BookingService._instantiate_booking(r) for r in rows]
@@ -208,24 +200,24 @@ class BookingService:
 
     @staticmethod
     def check_in(booking_id, user_id, pin_input=None):
-        """Mulai Pakai: simple confirmation for primary student or admin without QR/PIN."""
+        """Start Use: simple confirmation for the primary requester or admin without QR/PIN."""
         booking = BookingService.get_booking_by_id(booking_id)
         if not booking:
-            return False, "Pemesanan tidak ditemukan."
+            return False, "Booking not found."
 
         user = AuthService.get_user_by_id(user_id)
         if not user:
-            return False, "Pengguna tidak valid."
+            return False, "Invalid user."
 
         is_authorized = (user.id == booking.primary_student_id) or user.is_admin()
         if not is_authorized:
-            return False, "Anda tidak memiliki wewenang untuk memulai pemakaian ruangan ini."
+            return False, "You are not authorized to start using this room."
 
         if booking.status not in [BookingStatus.APPROVED, BookingStatus.PENDING_CONFIRMATION]:
-            return False, f"Tidak dapat memulai pemakaian. Status pemesanan: {booking.status}."
+            return False, f"Room use cannot begin while the booking status is {booking.status}."
 
         room = RoomService.get_room_by_id(booking.room_id)
-        room_name = room.name if room else "Ruangan"
+        room_name = room.name if room else "Room"
 
         now_str = datetime.now().isoformat()
         conn = get_db()
@@ -237,25 +229,25 @@ class BookingService:
         conn.commit()
         conn.close()
 
-        return True, f"Ruangan {room_name} berhasil mulai digunakan!"
+        return True, f"Room use has started for {room_name}."
 
     @staticmethod
     def check_out(booking_id, user_id):
-        """Selesai Pakai: simple confirmation for primary student or admin."""
+        """Finish Use: simple confirmation for the primary requester or admin."""
         booking = BookingService.get_booking_by_id(booking_id)
         if not booking:
-            return False, "Pemesanan tidak ditemukan."
+            return False, "Booking not found."
 
         user = AuthService.get_user_by_id(user_id)
         if not user:
-            return False, "Pengguna tidak valid."
+            return False, "Invalid user."
 
         is_authorized = (user.id == booking.primary_student_id) or user.is_admin()
         if not is_authorized:
-            return False, "Anda tidak memiliki wewenang untuk menyelesaikan pemakaian ruangan ini."
+            return False, "You are not authorized to finish using this room."
 
         if booking.status != BookingStatus.CHECKED_IN:
-            return False, "Pemesanan belum atau tidak sedang digunakan."
+            return False, "This booking is not currently in use."
 
         now_str = datetime.now().isoformat()
         conn = get_db()
@@ -268,7 +260,7 @@ class BookingService:
         conn.commit()
         conn.close()
 
-        return True, "Pemakaian ruangan telah selesai. Terima kasih!"
+        return True, "Room use has ended. Thank you!"
 
     @staticmethod
     def confirm_coming(booking_id, student_id):

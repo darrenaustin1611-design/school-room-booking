@@ -5,14 +5,11 @@
 {% block content %}
 <div class="spacious-hero">
     <div>
-        <span class="mono-tag" style="margin-bottom: 0.6rem;">
-            INDIVIDUAL RESERVATION LOG
-        </span>
         <h1 class="spacious-hero-title">
             My Campus <em>Bookings</em>
         </h1>
         <p style="color: var(--text-secondary); font-size: 1.05rem; margin-top: 0.5rem;">
-            Review confirmed reservations, pending faculty approvals, and past space utilization history.
+            {% if current_user.is_admin() %}Student and teacher booking records.{% else %}Your five most recent bookings, including active requests.{% endif %}
         </p>
     </div>
 </div>
@@ -20,7 +17,7 @@
 {% if bookings %}
 <div style="display: flex; flex-direction: column; gap: 2rem;">
     {% for item in bookings %}
-    <div class="card" style="border-left: 3px solid {% if item.booking.status == 'APPROVED' %}var(--status-approved){% elif item.booking.status == 'CHECKED_IN' %}var(--status-checkedin){% elif item.booking.status == 'PENDING' %}var(--status-pending){% else %}var(--status-expired){% endif %}; padding: 2.5rem;">
+    <div class="card booking-card" style="border-left: 3px solid {% if item.booking.status == 'APPROVED' %}var(--status-approved){% elif item.booking.status == 'CHECKED_IN' %}var(--status-checkedin){% elif item.booking.status == 'PENDING' %}var(--status-pending){% else %}var(--status-expired){% endif %}; padding: 2.5rem;">
         <div class="card-header">
             <div>
                 <span class="badge badge-{{ item.booking.status.lower() }}">{{ item.booking.status }}</span>
@@ -52,8 +49,8 @@
             </div>
             {% if current_user.is_admin() and item.student %}
             <div>
-                <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">PEMINJAM (STUDENT)</span>
-                <strong style="color: #38bdf8; font-size: 0.98rem;">{{ item.student.name }} ({{ item.student.student_id_number }})</strong>
+                <span class="mono" style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem;">BOOKED BY</span>
+                <strong style="color: #38bdf8; font-size: 0.98rem;">{{ item.student.name }} ({{ item.student.student_id_number if item.student.is_student() else 'Teacher' }})</strong>
             </div>
             {% endif %}
         </div>
@@ -61,13 +58,13 @@
         <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
             {% if item.booking.status in ['APPROVED', 'PENDING_CONFIRMATION'] %}
                 <button onclick="toggleUsage({{ item.booking.id }}, 'start')" class="btn btn-primary" style="background: #10b981; border-color: #10b981; font-weight: 600;">
-                    <i class="fas fa-play"></i> Mulai Pakai
+                    <i class="fas fa-play"></i> Start Use
                 </button>
             {% endif %}
 
             {% if item.booking.status == 'CHECKED_IN' %}
-                <button onclick="toggleUsage({{ item.booking.id }}, 'finish')" class="btn btn-danger" style="background: #ef4444; border-color: #ef4444; font-weight: 600;">
-                    <i class="fas fa-stop"></i> Selesai Pakai
+                <button onclick="toggleUsage({{ item.booking.id }}, 'finish')" class="btn btn-finish-use">
+                    <i class="fas fa-stop"></i> Finish Use
                 </button>
                 {% if item.booking.extension_status == 'PENDING' %}
                     <span class="badge badge-pending">Extension +{{ item.booking.extension_minutes }} min awaiting approval</span>
@@ -82,7 +79,7 @@
     {% endfor %}
 </div>
 {% else %}
-<div class="card" style="text-align: center; padding: 4.5rem 2rem;">
+<div class="card quiet-card" style="text-align: center; padding: 4.5rem 2rem;">
     <div class="card-icon" style="margin: 0 auto 1.5rem auto; width: 64px; height: 64px;">
         <i class="fas fa-calendar-xmark"></i>
     </div>
@@ -99,7 +96,6 @@
 <!-- Extension Modal -->
 <div class="modal-overlay" id="extensionModal">
     <div class="modal-card">
-        <span class="mono-tag" style="margin-bottom: 0.5rem;">TIME ADJUSTMENT</span>
         <h2 style="font-size: 1.8rem; margin: 0.4rem 0 0.5rem;">Request Extension</h2>
         <p style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 1.75rem;">
             Request extra room allocation if no subsequent reservations exist for this facility.

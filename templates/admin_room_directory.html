@@ -1,0 +1,56 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin-room-directory.css', v=asset_version) }}">
+<section class="card room-directory" aria-labelledby="room-directory-title" data-room-directory>
+    <header class="room-directory-header">
+        <h3 id="room-directory-title"><i class="fas fa-door-open" aria-hidden="true"></i> Room &amp; Lab Directory ({{ room_data|length }})</h3>
+        <div class="room-directory-search">
+            <label for="admin-room-search" class="form-label">Find a room</label>
+            <div class="room-directory-search-controls">
+                <input type="search" id="admin-room-search" class="form-input" placeholder="Search rooms, locations, or teachers" aria-describedby="admin-room-results" autocomplete="off">
+                <button type="button" class="btn btn-secondary" data-clear-room-search hidden>Clear</button>
+            </div>
+            <p id="admin-room-results" role="status" aria-live="polite">Choose a category to view its rooms.</p>
+        </div>
+    </header>
+    {% set categories = [('science_lab', 'Science Labs', 'flask'), ('media_room', 'Media & Tech', 'photo-film'), ('sports_facility', 'Sports Courts', 'basketball'), ('classroom', 'Academic Classrooms', 'chalkboard'), ('event_space', 'Event Halls', 'masks-theater')] %}
+    {% set known_categories = categories|map(attribute=0)|list %}
+    {% set extra_categories = room_data|map(attribute='room.category')|unique|reject('in', known_categories)|list %}
+    {% for category in extra_categories %}
+        {% set unused = categories.append((category, category|replace('_', ' ')|title, 'building')) %}
+    {% endfor %}
+    {% for category, label, icon in categories %}
+    {% set items = room_data|selectattr('room.category', 'equalto', category)|list %}
+    <details class="room-category" data-room-category data-category-label="{{ label }}">
+        <summary>
+            <i class="fas fa-{{ icon }} room-category-icon" aria-hidden="true"></i>
+            <span class="room-category-label">{{ label }}</span>
+            <span class="room-category-count" data-room-count>{{ items|length }}</span>
+            <span class="room-category-chevron" aria-hidden="true"></span>
+        </summary>
+        <div class="room-category-body">
+            {% if items %}
+            <table class="room-directory-table">
+                <caption class="room-directory-sr-only">{{ label }} room directory</caption>
+                <thead><tr>
+                    <th scope="col">Room Name</th>
+                    <th scope="col">Capacity &amp; Location</th>
+                    <th scope="col">Teacher in Charge</th>
+                    <th scope="col">Action</th>
+                </tr></thead>
+                <tbody>
+                {% for item in items %}
+                    <tr data-room-row data-room-search="{{ label }} {{ item.room.name }} {{ item.room.location }} {{ item.tic.name if item.tic else '' }} {{ item.tic.email if item.tic else '' }}">
+                        <td><strong>{{ item.room.name }}</strong></td>
+                        <td><span class="room-directory-mobile-label" aria-hidden="true">Capacity &amp; Location</span>{{ item.room.capacity }} people<small>{{ item.room.location }}</small></td>
+                        <td><span class="room-directory-mobile-label" aria-hidden="true">Teacher in Charge</span>{% if item.tic %}{{ item.tic.name }}<small>{{ item.tic.email }}</small>{% else %}Not assigned{% endif %}</td>
+                        <td class="room-directory-action"><a href="{{ url_for('room_detail', room_id=item.room.id) }}" class="btn btn-secondary" aria-label="View details for {{ item.room.name }}"><i class="fas fa-eye" aria-hidden="true"></i> Details</a></td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}<p class="room-directory-empty">No rooms in this category yet.</p>{% endif %}
+        </div>
+    </details>
+    {% endfor %}
+    <p class="room-directory-empty" data-room-empty hidden>No rooms found. Try a different name, location, or teacher.</p>
+</section>
+<script src="{{ url_for('static', filename='js/admin-room-directory.js', v=asset_version) }}" defer></script>

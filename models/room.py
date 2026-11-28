@@ -41,7 +41,7 @@ class Room:
 
     def get_special_guidelines(self):
         """Polymorphic method: returns room-specific usage rules and safety guidelines."""
-        return "Patuhi ketertiban umum dan jaga kebersihan fasilitas selama sesi penggunaan."
+        return "Follow facility rules and keep the room clean throughout your session."
 
     def to_dict(self):
         return {
@@ -69,7 +69,7 @@ class ScienceLab(Room):
 
     def get_special_guidelines(self):
         # Polymorphic override for Science Laboratories
-        return f"Panduan Keselamatan Lab {self.lab_type}: {self.safety_guidelines} Wajib menggunakan jas lab dan kacamata pengaman jika diperlukan."
+        return f"{self.lab_type} Lab Safety: {self.safety_guidelines} Wear a lab coat and safety glasses when required."
 
     def to_dict(self):
         data = super().to_dict()
@@ -90,7 +90,7 @@ class MediaRoom(Room):
     def get_special_guidelines(self):
         # Polymorphic override for Media & Production Rooms
         eq_str = ", ".join(self.equipment_list) if isinstance(self.equipment_list, list) else str(self.equipment_list)
-        return f"Peralatan Khusus: {eq_str}. Harap matikan seluruh perangkat audio/video dan pendingin ruangan setelah selesai."
+        return f"Special Equipment: {eq_str}. Turn off all audio, video, and air-conditioning equipment after use."
 
     def to_dict(self):
         data = super().to_dict()
@@ -107,7 +107,7 @@ class SportsFacility(Room):
 
     def get_special_guidelines(self):
         # Polymorphic override for Sports Facilities
-        return f"Area Olahraga ({self.court_type}): Wajib mengenakan pakaian & sepatu olahraga standar. Dilarang membawa makanan ke dalam lapangan."
+        return f"Sports Area ({self.court_type}): Wear standard sports clothing and footwear. Food is not permitted on the court."
 
     def to_dict(self):
         data = super().to_dict()
@@ -130,7 +130,7 @@ class Classroom(Room):
 
     def get_special_guidelines(self):
         # Polymorphic override for Standard Classrooms
-        return f"Ruang Belajar {self.grade_level}: Hanya dapat dipinjam untuk kegiatan belajar kelompok mulai pukul {self.booking_start_time} dengan persetujuan Wali Kelas."
+        return f"Grade {self.grade_level} Study Room: Available for group study from {self.booking_start_time}, subject to homeroom teacher approval."
 
     def to_dict(self):
         data = super().to_dict()

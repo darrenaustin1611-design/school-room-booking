@@ -28,27 +28,76 @@ function initBookingTimes() {
     const start = form.elements.start_time;
     const end = form.elements.end_time;
     const duration = form.querySelector('#booking-duration');
+    const interval = 10;
     const toMinutes = time => Number(time.slice(0, 2)) * 60 + Number(time.slice(3));
+    const toTime = minutes => String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0');
+    const startDraft = start.dataset.selected;
+    const endDraft = end.dataset.selected;
+
+    function addOption(select, value, label = value) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        select.appendChild(option);
+    }
+
+    function resetSelect(select, label) {
+        select.replaceChildren();
+        addOption(select, '', label);
+    }
+
+    const startValues = new Set();
+    availableWindows.forEach(period => {
+        const first = Math.ceil(toMinutes(period.start) / interval) * interval;
+        const last = Math.floor(toMinutes(period.end) / interval) * interval;
+        for (let minute = first; minute + interval <= last; minute += interval) {
+            startValues.add(toTime(minute));
+        }
+    });
+    [...startValues].sort().forEach(value => addOption(start, value));
+    if (startValues.has(startDraft)) start.value = startDraft;
+
+    function populateEndTimes(selectedValue = '') {
+        resetSelect(end, 'Select end time');
+        const period = availableWindows.find(item => start.value >= item.start && start.value < item.end);
+        end.disabled = !period;
+        if (!period) return null;
+
+        const first = toMinutes(start.value) + interval;
+        const last = Math.floor(toMinutes(period.end) / interval) * interval;
+        for (let minute = first; minute <= last; minute += interval) {
+            addOption(end, toTime(minute));
+        }
+        if ([...end.options].some(option => option.value === selectedValue)) end.value = selectedValue;
+        return period;
+    }
 
     function updateTimes() {
         const period = availableWindows.find(period => start.value >= period.start && start.value < period.end);
         start.setCustomValidity(start.value && !period ? 'Choose a start time within an available period.' : '');
-        end.disabled = !period;
         const validEnd = period && end.value && end.value > start.value && end.value <= period.end;
         end.setCustomValidity(period && end.value && !validEnd ? 'Choose an end time after the start, within the same available period.' : '');
-        end.max = period ? period.end : '';
         let message = duration.dataset.default;
         if (validEnd) {
-            message = (toMinutes(end.value) - toMinutes(start.value)) + ' minutes (' + start.value + ' to ' + end.value + ')';
+            message = (toMinutes(end.value) - toMinutes(start.value)) + ' minutes (' + start.value + '\u2013' + end.value + ' WIB)';
+        } else if (start.value && !period) {
+            message = 'Choose a start time within an available period.';
         } else if (period) {
-            message = 'Choose an end time up to ' + period.end + '.';
+            message = 'Select an end time up to ' + period.end + ' WIB.';
         }
         if (duration.textContent !== message) duration.textContent = message;
     }
 
-    start.addEventListener('input', updateTimes);
-    end.addEventListener('input', updateTimes);
-    window.addEventListener('pageshow', updateTimes);
+    start.addEventListener('change', () => {
+        populateEndTimes();
+        updateTimes();
+    });
+    end.addEventListener('change', updateTimes);
+    window.addEventListener('pageshow', () => {
+        populateEndTimes(end.value);
+        updateTimes();
+    });
+    populateEndTimes(endDraft);
     updateTimes();
 }
 
@@ -403,8 +452,8 @@ function initModals() {
 function toggleUsage(bookingId, action) {
     const isStart = action === 'start';
     const msg = isStart 
-        ? "Konfirmasi: Mulai menggunakan ruangan ini sekarang?" 
-        : "Konfirmasi: Selesai menggunakan ruangan ini sekarang?";
+        ? "Start using this room now?"
+        : "Finish using this room now?";
     
     if (!confirm(msg)) return;
 
@@ -425,7 +474,7 @@ function toggleUsage(bookingId, action) {
     })
     .catch(err => {
         console.error(err);
-        alert('Terjadi kesalahan saat menghubungi server.');
+        alert('Could not connect to the server. Please try again.');
     });
 }
 

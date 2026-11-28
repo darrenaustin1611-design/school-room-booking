@@ -21,5 +21,5 @@ class Config:
     FACILITY_CLOSE_TIME = "20:00"
     
     # School Identity & Email domain
-    SCHOOL_NAME = "SMA Marsudirini Bekasi"
-    SCHOOL_EMAIL_DOMAIN = "@smamarsudirinibekasi.sch.id"
+    SCHOOL_NAME = "Marsudirini"
+    SCHOOL_EMAIL_DOMAIN = "@example.com"

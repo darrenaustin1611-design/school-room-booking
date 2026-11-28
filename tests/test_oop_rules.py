@@ -1,4 +1,6 @@
 import unittest
+import tempfile
+from unittest.mock import patch
 import os
 import sqlite3
 import json
@@ -10,12 +12,11 @@ from services.booking_service import BookingService
 
 class TestSchoolBookingOOPRules(unittest.TestCase):
     def setUp(self):
-        # Ensure fresh database isolation for each test
-        if os.path.exists(Config.DATABASE_PATH):
-            try:
-                os.remove(Config.DATABASE_PATH)
-            except Exception:
-                pass
+        temp_db = tempfile.TemporaryDirectory(prefix='edureserve-test-')
+        self.addCleanup(temp_db.cleanup)
+        database_path = patch.object(Config, 'DATABASE_PATH', os.path.join(temp_db.name, 'test.db'))
+        database_path.start()
+        self.addCleanup(database_path.stop)
         init_db()
 
         conn = get_db()
@@ -126,6 +127,20 @@ class TestSchoolBookingOOPRules(unittest.TestCase):
         )
         self.assertIsNone(b)
         self.assertIn("after school hours", err)
+
+    def test_booking_times_use_ten_minute_intervals(self):
+        """Booking start and end times must align to the 10-minute selector interval."""
+        student = self.students[0]
+        booking, err = BookingService.create_booking(
+            primary_student_id=student['id'],
+            room_id=self.physics_lab['id'],
+            booking_date="2026-09-13",
+            start_time="16:05",
+            end_time="17:00",
+            purpose="Invalid interval check"
+        )
+        self.assertIsNone(booking)
+        self.assertIn("10-minute intervals", err)
 
     def test_grace_period_extension_confirm_coming(self):
         """Rule Verification: Confirming 'Yes I'm coming' extends grace period to +15 mins (total 30 mins)."""

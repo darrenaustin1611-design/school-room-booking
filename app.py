@@ -1,5 +1,4 @@
 import os
-import re
 import hashlib
 from datetime import date, datetime, timedelta, timezone
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
@@ -16,12 +15,11 @@ app.config.from_object(Config)
 def build_asset_version():
     """Create a stable cache key that changes whenever local CSS or JS changes."""
     digest = hashlib.sha256()
-    for relative_path in ('static/css/main.css', 'static/js/main.js'):
+    for relative_path in ('static/css/main.css', 'static/js/main.js',
+                          'static/css/admin-room-directory.css', 'static/js/admin-room-directory.js'):
         with open(os.path.join(app.root_path, relative_path), 'rb') as asset:
             digest.update(asset.read())
     return digest.hexdigest()[:12]
-
-ASSET_VERSION = build_asset_version()
 
 SCHOOL_TIMEZONE = timezone(timedelta(hours=7))
 
@@ -37,7 +35,7 @@ def get_current_user():
 
 @app.context_processor
 def inject_user():
-    return dict(current_user=get_current_user(), asset_version=ASSET_VERSION)
+    return dict(current_user=get_current_user(), asset_version=build_asset_version())
 
 # --- Routes ---
 
@@ -61,7 +59,7 @@ def dashboard():
     pending_approvals_count = 0
     notifications = []
 
-    if user.is_student():
+    if user.is_student() or user.is_teacher():
         user_bookings = BookingService.get_user_bookings(user.id)
         for b in user_bookings:
             if b.is_active():
@@ -70,7 +68,7 @@ def dashboard():
                 active_booking_tic = AuthService.get_user_by_id(b.teacher_in_charge_id)
                 break
 
-    elif user.is_teacher():
+    if user.is_teacher():
         cursor.execute("""
             SELECT * FROM bookings WHERE teacher_in_charge_id = ?
             AND (status = 'PENDING' OR (status = 'CHECKED_IN' AND extension_status = 'PENDING'))
@@ -205,10 +203,10 @@ def room_detail(room_id, booking_draft=None):
 def create_booking_route():
     user = get_current_user()
     if not user:
-        flash("Only logged-in students can request room bookings.", 'error')
+        flash("Only logged-in students and teachers can request room bookings.", 'error')
         return redirect(url_for('login'))
-    if not user.is_student():
-        flash("Only students can request room bookings.", 'error')
+    if not (user.is_student() or user.is_teacher()):
+        flash("Only students and teachers can request room bookings.", 'error')
         return redirect(url_for('rooms_catalog'))
 
     room_id = request.form.get('room_id', type=int)
@@ -238,7 +236,9 @@ def create_booking_route():
         except ValueError:
             err = "Choose a valid start and end time."
         else:
-            if booking_day == school_now.date() and start_time <= school_now.strftime('%H:%M'):
+            if int(start_time[3:]) % 10 or int(end_time[3:]) % 10:
+                err = "Start and end times must use 10-minute intervals."
+            elif booking_day == school_now.date() and start_time <= school_now.strftime('%H:%M'):
                 err = "That start time has passed. Choose a later time or another date."
             else:
                 _, err = BookingService.create_booking(
@@ -260,7 +260,7 @@ def create_booking_route():
 @app.route('/my-bookings')
 def my_bookings():
     user = get_current_user()
-    if not user or (not user.is_student() and not user.is_admin()):
+    if not user or (not user.is_student() and not user.is_teacher() and not user.is_admin()):
         return redirect(url_for('login'))
 
     user_bookings = BookingService.get_user_bookings(user.id)
@@ -311,9 +311,15 @@ def approvals_queue():
         tic = AuthService.get_user_by_id(b.teacher_in_charge_id)
         fyi_list.append({'booking': b, 'student': stu, 'room': rm, 'tic': tic})
 
+    history = cursor.execute("""
+        SELECT h.*, u.name AS booker_name, r.name AS room_name
+        FROM pic_history h JOIN users u ON u.id=h.booker_id JOIN rooms r ON r.id=h.room_id
+        WHERE h.pic_id=? ORDER BY h.id DESC LIMIT 25
+    """, (user.id,)).fetchall()
     conn.close()
 
-    return render_template('approvals.html', active_page='approvals', pending_list=pending_list, fyi_list=fyi_list)
+    return render_template('approvals.html', active_page='approvals', pending_list=pending_list,
+                           fyi_list=fyi_list, history=history)
 
 @app.route('/teachers')
 def teachers_directory():
@@ -339,15 +345,10 @@ def teachers_directory():
             if hr_row:
                 homeroom_room = hr_row['name']
 
-        clean_p = re.sub(r'[^0-9]', '', t_obj.contact_phone or '')
-        if clean_p.startswith('0'):
-            clean_p = '62' + clean_p[1:]
-
         teacher_list.append({
             'teacher': t_obj, 
             'managed_rooms': m_rooms,
-            'homeroom_classroom': homeroom_room,
-            'clean_phone': clean_p
+            'homeroom_classroom': homeroom_room
         })
 
     conn.close()
@@ -452,7 +453,7 @@ def approval_action_api(booking_id):
 def admin_data_center():
     user = get_current_user()
     if not user or not user.is_admin():
-        flash("Akses terbatas untuk Administrator & Tata Usaha.", "error")
+        flash("Access restricted to the Administrator & School Office.", "error")
         return redirect(url_for('login'))
 
     conn = get_db()
@@ -474,15 +475,10 @@ def admin_data_center():
             if hr:
                 homeroom_name = hr['name']
 
-        clean_p = re.sub(r'[^0-9]', '', t_obj.contact_phone or '')
-        if clean_p.startswith('0'):
-            clean_p = '62' + clean_p[1:]
-
         teacher_data.append({
             'teacher': t_obj,
             'managed_rooms': m_rooms,
-            'homeroom_name': homeroom_name,
-            'clean_phone': clean_p
+            'homeroom_name': homeroom_name
         })
 
     # 2. Students with Homeroom Teacher
@@ -533,7 +529,7 @@ def admin_data_center():
 def admin_download_excel():
     user = get_current_user()
     if not user or not user.is_admin():
-        flash("Akses terbatas untuk Administrator & Tata Usaha.", "error")
+        flash("Access restricted to the Administrator & School Office.", "error")
         return redirect(url_for('login'))
 
     buf = ExcelService.export_current_data_to_excel()
@@ -549,20 +545,20 @@ def admin_download_excel():
 def admin_upload_excel():
     user = get_current_user()
     if not user or not user.is_admin():
-        flash("Akses terbatas untuk Administrator & Tata Usaha.", "error")
+        flash("Access restricted to the Administrator & School Office.", "error")
         return redirect(url_for('login'))
 
     if 'excel_file' not in request.files:
-        flash("Tidak ada file yang diunggah.", "error")
+        flash("No file was uploaded.", "error")
         return redirect(url_for('admin_data_center'))
 
     file = request.files['excel_file']
     if file.filename == '':
-        flash("Silakan pilih file Excel terlebih dahulu.", "error")
+        flash("Select an Excel file first.", "error")
         return redirect(url_for('admin_data_center'))
 
     if not file.filename.lower().endswith('.xlsx'):
-        flash("Format file harus berformat .xlsx (Microsoft Excel / Google Sheets).", "error")
+        flash("The file must use the .xlsx format (Microsoft Excel / Google Sheets).", "error")
         return redirect(url_for('admin_data_center'))
 
     result = ExcelService.import_excel_data(file.stream)
@@ -570,9 +566,9 @@ def admin_upload_excel():
         flash(result['message'], 'success')
         if result.get('errors'):
             for err in result['errors']:
-                flash(f"Peringatan: {err}", 'warning')
+                flash(f"Warning: {err}", 'warning')
     else:
-        flash(result.get('message', 'Terjadi kesalahan saat memproses file Excel.'), 'error')
+        flash(result.get('message', 'An error occurred while processing the Excel file.'), 'error')
 
     return redirect(url_for('admin_data_center'))
 
@@ -584,11 +580,11 @@ def quick_demo_login(user_id):
         return redirect(url_for('login' if not user else 'dashboard'))
     u = AuthService.get_user_by_id(user_id)
     if not u:
-        flash("Akun pengguna tidak ditemukan.", "error")
+        flash("User account not found.", "error")
         return redirect(url_for('login'))
 
     session['user_id'] = u.id
-    flash(f"Berhasil beralih ke akun demo: {u.name} ({u.role.upper()})", "success")
+    flash(f"Switched to demo account: {u.name} ({u.role.upper()})", "success")
     if u.is_admin():
         return redirect(url_for('admin_data_center'))
     return redirect(url_for('dashboard'))

@@ -6,105 +6,110 @@
 <!-- Spacious Editorial Hero -->
 <div class="spacious-hero" style="margin-bottom: 2rem;">
     <div>
-        <span class="mono-tag" style="margin-bottom: 0.6rem; background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: rgba(56, 189, 248, 0.25);">
-            ADMINISTRATION &bull; MASTER DATA REPOSITORY
-        </span>
         <h1 class="spacious-hero-title">
             Data Center & <em>Excel Sync</em>
         </h1>
         <p style="color: var(--text-secondary); font-size: 1.05rem; margin-top: 0.5rem; max-width: 720px;">
-            Pusat kendali data sekolah. Kelola dan sinkronkan guru, wali kelas, PIC ruangan, fasilitas, dan siswa secara otomatis melalui file Excel (.xlsx).
+            Manage and synchronize teachers, homerooms, room PICs, facilities, and students from one Excel workbook (.xlsx).
         </p>
     </div>
     <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
         <a href="{{ url_for('admin_download_excel') }}" class="btn btn-primary" style="background: #059669; border-color: #059669;">
-            <i class="fas fa-file-excel"></i> Download Excel Terkini
+            <i class="fas fa-file-excel"></i> Download Latest Excel
         </a>
     </div>
 </div>
 
 {% set classroom_count = room_data|selectattr('room.category', 'equalto', 'classroom')|list|length %}
 {% set homeroom_count = teacher_data|selectattr('homeroom_name')|list|length %}
-<dl class="admin-stats" aria-label="Ringkasan data sekolah">
+<dl class="admin-stats" aria-label="School data summary">
     <div class="card admin-stat" style="--stat-accent: #38bdf8;">
-        <dt>Guru dan staf</dt>
+        <dt>Teachers and staff</dt>
         <dd>{{ teachers|length }}</dd>
     </div>
     <div class="card admin-stat" style="--stat-accent: #10b981;">
-        <dt>Ruangan dan fasilitas</dt>
+        <dt>Rooms and facilities</dt>
         <dd>{{ rooms|length }}</dd>
-        <dd class="admin-stat-detail">{{ classroom_count }} ruang kelas, {{ rooms|length - classroom_count }} fasilitas lain</dd>
+        <dd class="admin-stat-detail">{{ classroom_count }} classrooms, {{ rooms|length - classroom_count }} other facilities</dd>
     </div>
     <div class="card admin-stat" style="--stat-accent: #a855f7;">
-        <dt>Akun demo siswa</dt>
+        <dt>Student demo accounts</dt>
         <dd>{{ students|length }}</dd>
     </div>
     <div class="card admin-stat" style="--stat-accent: #f59e0b;">
-        <dt>Wali kelas aktif</dt>
+        <dt>Active homeroom teachers</dt>
         <dd>{{ homeroom_count }}</dd>
     </div>
 </dl>
 
 <!-- Excel Sync Hub -->
-<div class="card" style="padding: 2rem; margin-bottom: 2.5rem; background: linear-gradient(135deg, rgba(6, 44, 30, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%); border: 1px solid rgba(56, 189, 248, 0.25);">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; flex-wrap: wrap;">
-        <div style="max-width: 600px;">
-            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-                <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: #10b981;">
-                    <i class="fas fa-cloud-arrow-up" style="font-size: 1.2rem;"></i>
-                </div>
-                <h2 style="font-size: 1.5rem; color: #ffffff; margin: 0;">Sinkronisasi Otomatis via File Excel (.xlsx)</h2>
-            </div>
-            <p style="color: var(--text-secondary); font-size: 0.94rem; line-height: 1.6;">
-                Anda dapat memperbarui seluruh data sekolah (guru, ruang kerja, nomor WhatsApp, PIC lab/ruangan, wali kelas, serta siswa) cukup dengan mengedit file spreadsheet dan mengunggahnya ke sini.
-            </p>
-            <div style="margin-top: 1rem; display: flex; gap: 1rem; font-size: 0.82rem; color: var(--text-muted);">
-                <span><i class="fas fa-check-circle" style="color: #10b981;"></i> 3 Sheet: Guru_dan_Staf, Ruangan_dan_PIC, Siswa</span>
-                <span><i class="fas fa-check-circle" style="color: #10b981;"></i> Auto-mapping PIC & Wali Kelas</span>
-            </div>
+<section class="admin-data-tools" aria-label="Data management tools">
+<div class="card admin-excel-card admin-upload">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: #10b981; flex-shrink: 0;">
+            <i class="fas fa-cloud-arrow-up" style="font-size: 1.2rem;"></i>
         </div>
-
-        <!-- Upload Form -->
-        <div style="background: rgba(15, 23, 42, 0.8); border: 1px dashed rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 1.5rem; min-width: 320px; flex: 1; max-width: 480px;">
-            <form action="{{ url_for('admin_upload_excel') }}" method="POST" enctype="multipart/form-data">
-                <label style="display: block; margin-bottom: 0.6rem; font-weight: 600; font-size: 0.88rem; color: #ffffff;">
-                    Pilih File Excel (.xlsx)
-                </label>
-                <input type="file" name="excel_file" accept=".xlsx" required class="form-input" style="padding: 0.6rem; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.15); margin-bottom: 1rem; width: 100%;">
-                
-                <div style="display: flex; gap: 0.75rem;">
-                    <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">
-                        <i class="fas fa-upload"></i> Unggah & Sinkronkan
-                    </button>
-                    <a href="{{ url_for('admin_download_excel') }}" class="btn btn-secondary" title="Unduh Template Excel">
-                        <i class="fas fa-download"></i>
-                    </a>
-                </div>
-            </form>
-        </div>
+        <h2 style="font-size: 1.5rem; color: #ffffff; margin: 0;">Automated Excel Sync (.xlsx)</h2>
     </div>
+    <p style="color: var(--text-secondary); font-size: 0.94rem; line-height: 1.6; margin-bottom: 0.5rem;">
+        Update teachers, students, rooms, PIC assignments, and homeroom data from one workbook.
+    </p>
+    <div class="admin-excel-features" style="margin-bottom: 1rem;">
+        <span><i class="fas fa-check-circle" style="color: #10b981;"></i> Three structured data sheets</span>
+        <span><i class="fas fa-check-circle" style="color: #10b981;"></i> Automatic PIC and homeroom mapping</span>
+    </div>
+    <form action="{{ url_for('admin_upload_excel') }}" method="POST" enctype="multipart/form-data">
+        <label style="display: block; margin-bottom: 0.6rem; font-weight: 600; font-size: 0.88rem; color: #ffffff;">
+            Choose an Excel file (.xlsx)
+        </label>
+        <input type="file" name="excel_file" accept=".xlsx" required class="form-input" style="padding: 0.6rem; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.15); margin-bottom: 1rem; width: 100%;">
+        <div style="display: flex; gap: 0.75rem;">
+            <button type="submit" class="btn btn-primary" style="flex: 1; justify-content: center;">
+                <i class="fas fa-upload"></i> Upload &amp; Sync
+            </button>
+            <a href="{{ url_for('admin_download_excel') }}" class="btn btn-secondary" title="Download Excel Template">
+                <i class="fas fa-download"></i>
+            </a>
+        </div>
+    </form>
 </div>
 
+<aside class="card admin-sqlite-card" aria-labelledby="sqlite-web-title">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <div style="width: 38px; height: 38px; border-radius: 8px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: #10b981; flex-shrink: 0;">
+                <i class="fas fa-database" style="font-size: 1.1rem;"></i>
+            </div>
+            <h2 id="sqlite-web-title" style="margin: 0; font-size: 1.4rem;">SQLite Web</h2>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.94rem; margin-bottom: 1.5rem;">Manage tables and run queries.</p>
+    </div>
+    <a href="http://127.0.0.1:8080/" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="width: 100%; justify-content: center;">
+        <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> Open SQLite Web
+    </a>
+</aside>
+</section>
+
 <!-- Navigation Tabs -->
-<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-    <button onclick="switchTab('tab-teachers')" id="btn-tab-teachers" class="btn btn-secondary active" style="font-size: 0.88rem; border-color: var(--accent-mint); color: var(--accent-mint); white-space: nowrap; flex-shrink: 0;">
-        <i class="fas fa-user-tie"></i> Guru, PIC & Walas ({{ teachers|length }})
+<div class="admin-tabs" role="tablist" aria-label="Data directories">
+    <button type="button" onclick="switchTab('tab-teachers')" id="btn-tab-teachers" class="btn btn-secondary admin-tab-btn active" style="border-color: var(--accent-mint); color: var(--accent-mint);">
+        <i class="fas fa-user-tie"></i> Teachers, PICs & Homerooms ({{ teachers|length }})
     </button>
-    <button onclick="switchTab('tab-students')" id="btn-tab-students" class="btn btn-secondary" style="font-size: 0.88rem; white-space: nowrap; flex-shrink: 0;">
-        <i class="fas fa-user-graduate"></i> Siswa Demo ({{ students|length }})
+    <button type="button" onclick="switchTab('tab-students')" id="btn-tab-students" class="btn btn-secondary admin-tab-btn">
+        <i class="fas fa-user-graduate"></i> Demo Students ({{ students|length }})
     </button>
-    <button onclick="switchTab('tab-rooms')" id="btn-tab-rooms" class="btn btn-secondary" style="font-size: 0.88rem; white-space: nowrap; flex-shrink: 0;">
-        <i class="fas fa-door-open"></i> Ruangan & Lab ({{ rooms|length }})
+    <button type="button" onclick="switchTab('tab-rooms')" id="btn-tab-rooms" class="btn btn-secondary admin-tab-btn">
+        <i class="fas fa-door-open"></i> Rooms & Labs ({{ rooms|length }})
     </button>
 </div>
 
 <!-- TAB 1: TEACHERS & PIC DIRECTORY -->
 <div id="tab-teachers" class="tab-content">
-    <div class="card" style="padding: 0; overflow: hidden;">
+    <div class="card admin-table" style="padding: 0; overflow: hidden;">
         <div style="padding: 1.25rem 1.5rem; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
             <h3 style="font-size: 1.15rem; color: #ffffff; margin: 0;">
                 <i class="fas fa-address-book" style="color: var(--accent-mint); margin-right: 0.5rem;"></i>
-                Daftar Lengkap Guru, Penanggung Jawab (PIC) & Wali Kelas
+                Teacher, Person-in-Charge (PIC) & Homeroom Directory
             </h3>
         </div>
         
@@ -112,12 +117,12 @@
             <table class="admin-teachers-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
                 <thead>
                     <tr style="background: rgba(15, 23, 42, 0.7); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
-                        <th style="padding: 1rem 1.25rem;">Guru / Pendidik</th>
-                        <th style="padding: 1rem 1.25rem;">Mata Pelajaran & Kantor</th>
+                        <th style="padding: 1rem 1.25rem;">Teacher / Educator</th>
+                        <th style="padding: 1rem 1.25rem;">Subject & Office</th>
                         <th style="padding: 1rem 1.25rem;">WhatsApp</th>
-                        <th style="padding: 1rem 1.25rem;">Wali Kelas (Homeroom)</th>
-                        <th style="padding: 1rem 1.25rem;">PIC Ruangan / Lab</th>
-                        <th style="padding: 1rem 1.25rem; text-align: right;">Aksi Demo</th>
+                        <th style="padding: 1rem 1.25rem;">Homeroom</th>
+                        <th style="padding: 1rem 1.25rem;">Room / Lab PIC</th>
+                        <th style="padding: 1rem 1.25rem; text-align: right;">Demo Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -141,12 +146,12 @@
                             </div>
                         </td>
                         <td style="padding: 1rem 1.25rem;">
-                            {% if item.clean_phone %}
-                                <a href="https://wa.me/{{ item.clean_phone }}" target="_blank" rel="noopener" class="admin-whatsapp-link">
+                            {% if item.teacher.contact_phone %}
+                                <span class="admin-whatsapp-link">
                                     <i class="fab fa-whatsapp" aria-hidden="true"></i> {{ item.teacher.contact_phone }}
-                                </a>
+                                </span>
                             {% else %}
-                                <span class="admin-contact-empty">Belum tersedia</span>
+                                <span class="admin-contact-empty">Not available</span>
                             {% endif %}
                         </td>
                         <td style="padding: 1rem 1.25rem;">
@@ -173,7 +178,7 @@
                         </td>
                         <td style="padding: 1rem 1.25rem; text-align: right;">
                             <a href="{{ url_for('quick_demo_login', user_id=item.teacher.id) }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
-                                <i class="fas fa-arrow-right-to-bracket"></i> Login Guru
+                                <i class="fas fa-arrow-right-to-bracket"></i> Teacher Login
                             </a>
                         </td>
                     </tr>
@@ -186,11 +191,11 @@
 
 <!-- TAB 2: STUDENTS DIRECTORY -->
 <div id="tab-students" class="tab-content" style="display: none;">
-    <div class="card" style="padding: 0; overflow: hidden;">
+    <div class="card admin-table" style="padding: 0; overflow: hidden;">
         <div style="padding: 1.25rem 1.5rem; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
             <h3 style="font-size: 1.15rem; color: #ffffff; margin: 0;">
                 <i class="fas fa-user-graduate" style="color: var(--accent-mint); margin-right: 0.5rem;"></i>
-                Daftar Siswa Demo Terdaftar
+                Registered Demo Students
             </h3>
         </div>
 
@@ -198,12 +203,12 @@
             <table class="admin-students-table">
                 <thead>
                     <tr style="background: rgba(15, 23, 42, 0.7); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
-                        <th style="padding: 1rem 1.25rem;">Nama Siswa</th>
+                        <th style="padding: 1rem 1.25rem;">Student Name</th>
                         <th style="padding: 1rem 1.25rem;">NIS / Student ID</th>
-                        <th style="padding: 1rem 1.25rem;">Email Contoh</th>
-                        <th style="padding: 1rem 1.25rem;">Kelas</th>
-                        <th style="padding: 1rem 1.25rem;">Guru Wali Kelas</th>
-                        <th style="padding: 1rem 1.25rem; text-align: right;">Aksi Demo</th>
+                        <th style="padding: 1rem 1.25rem;">Demo Email</th>
+                        <th style="padding: 1rem 1.25rem;">Class</th>
+                        <th style="padding: 1rem 1.25rem;">Homeroom Teacher</th>
+                        <th style="padding: 1rem 1.25rem; text-align: right;">Demo Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -221,7 +226,7 @@
                             <span class="badge badge-checkedin mono">{{ item.student.student_id_number }}</span>
                         </td>
                         <td style="padding: 1rem 1.25rem;">
-                            <span class="admin-student-email">siswa{{ item.student.id }}@example.com</span>
+                            <span class="admin-student-email">{{ item.student.email }}</span>
                         </td>
                         <td style="padding: 1rem 1.25rem;">
                             {% set classroom = item.classroom_name %}
@@ -236,7 +241,7 @@
                         </td>
                         <td style="padding: 1rem 1.25rem; text-align: right;">
                             <a href="{{ url_for('quick_demo_login', user_id=item.student.id) }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
-                                <i class="fas fa-arrow-right-to-bracket"></i> Login Siswa
+                                <i class="fas fa-arrow-right-to-bracket"></i> Student Login
                             </a>
                         </td>
                     </tr>
@@ -249,57 +254,7 @@
 
 <!-- TAB 3: ROOMS & FACILITIES -->
 <div id="tab-rooms" class="tab-content" style="display: none;">
-    <div class="card" style="padding: 0; overflow: hidden;">
-        <div style="padding: 1.25rem 1.5rem; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-            <h3 style="font-size: 1.15rem; color: #ffffff; margin: 0;">
-                <i class="fas fa-door-open" style="color: var(--accent-mint); margin-right: 0.5rem;"></i>
-                Daftar Ruangan &amp; Lab ({{ room_data|length }})
-            </h3>
-        </div>
-
-        <div style="overflow-x: auto;">
-            <table class="admin-rooms-table">
-                <thead>
-                    <tr style="background: rgba(15, 23, 42, 0.7); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">
-                        <th scope="col">Nama Ruangan</th>
-                        <th scope="col">Kategori</th>
-                        <th scope="col">Kapasitas &amp; Lokasi</th>
-                        <th scope="col">Guru Penanggung Jawab</th>
-                        <th scope="col" class="admin-room-action">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in room_data %}
-                    <tr>
-                        <td>
-                            <div style="font-weight: 600; color: #ffffff;">{{ item.room.name }}</div>
-                        </td>
-                        <td>
-                            <span class="badge badge-approved" style="font-size: 0.72rem; text-transform: uppercase;">{{ item.room.category.replace('_', ' ') }}</span>
-                        </td>
-                        <td>
-                            <div style="color: #ffffff;"><i class="fas fa-users" style="color: var(--accent-mint); font-size: 0.75rem;"></i> {{ item.room.capacity }} Orang</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.15rem;">{{ item.room.location }}</div>
-                        </td>
-                        <td>
-                            {% if item.tic %}
-                                <div style="font-weight: 600; color: #ffffff;">{{ item.tic.name }}</div>
-                                <div class="admin-teacher-email" style="font-size: 0.75rem; color: var(--text-muted);">{{ item.tic.email }}</div>
-                            {% else %}
-                                <span class="mono" style="color: var(--text-muted);">—</span>
-                            {% endif %}
-                        </td>
-                        <td class="admin-room-action">
-                            <a href="{{ url_for('room_detail', room_id=item.room.id) }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.4rem 0.75rem;">
-                                <i class="fas fa-eye"></i> Detail
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    {% include 'admin_room_directory.html' %}
 </div>
 
 <script>

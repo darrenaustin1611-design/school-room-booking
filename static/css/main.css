@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    EduReserve Design System â€” Living & Scroll-Driven Aesthetic
    Inspired by why.zero.university & unitedcarriers.com
    Crafted with deep alpine forest emerald, luminous sage/mint lighting,
@@ -65,7 +65,9 @@
 /* ==========================================================================
    Base Reset & Document Flow
    ========================================================================== */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -208,21 +210,17 @@ body {
   z-index: 0;
   pointer-events: none;
   background-color: var(--bg-deep);
-  background-image: 
-    radial-gradient(
-      ellipse 130vw 135vh at 50% 120%,
+  background-image:
+    radial-gradient(ellipse 130vw 135vh at 50% 120%,
       rgba(212, 246, 235, 0.18) 0%,
       rgba(159, 227, 206, 0.13) 22%,
       rgba(99, 178, 151, 0.08) 42%,
       rgba(35, 88, 70, 0.18) 65%,
       rgba(14, 38, 29, 0.8) 85%,
-      var(--bg-deep) 100%
-    ),
-    radial-gradient(
-      circle at 15% 15%,
+      var(--bg-deep) 100%),
+    radial-gradient(circle at 15% 15%,
       rgba(159, 227, 206, 0.07) 0%,
-      transparent 50%
-    );
+      transparent 50%);
   transition: transform 0.2s linear;
 }
 
@@ -241,7 +239,10 @@ body {
 /* ==========================================================================
    Typography Masterclass
    ========================================================================== */
-h1, h2, h3, .serif-heading {
+h1,
+h2,
+h3,
+.serif-heading {
   font-family: 'Newsreader', Georgia, serif;
   font-weight: 400;
   letter-spacing: -0.025em;
@@ -263,7 +264,9 @@ h3 {
   line-height: 1.3;
 }
 
-h4, h5, h6 {
+h4,
+h5,
+h6 {
   font-family: 'Inter', sans-serif;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -474,7 +477,7 @@ p {
     gap: 0.6rem;
   }
 
-  .navbar--signed-in .nav-links > li {
+  .navbar--signed-in .nav-links>li {
     flex: 1;
   }
 
@@ -541,6 +544,36 @@ p {
   font-size: 1.35rem;
 }
 
+.faculty-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.faculty-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  background: #194434;
+  border-inline-start: 3px solid #8ce4bd;
+  border-radius: var(--radius-sm);
+}
+
+.faculty-card-header h2 {
+  color: #fff;
+  font-size: clamp(1.35rem, 2vw, 1.65rem);
+  line-height: 1.2;
+}
+
+.faculty-card .faculty-department {
+  align-self: flex-start;
+  margin: 0.75rem 0 1.25rem;
+  max-width: 100%;
+  white-space: normal;
+}
+
 .admin-person {
   display: flex;
   align-items: center;
@@ -565,9 +598,15 @@ p {
   position: relative;
   z-index: 1;
 }
+
 /* Wide-page override — only applied to the room detail page */
-body.wide-page .container { max-width: 1320px; }
-body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
+body.wide-page .container {
+  max-width: 1320px;
+}
+
+body.wide-page .dashboard-dual-grid {
+  grid-template-columns: 1.8fr 1fr;
+}
 
 
 /* ==========================================================================
@@ -686,11 +725,25 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
 /* ==========================================================================
    Section Entrance Stagger (Cascade)
    ========================================================================== */
-.stagger-1 { transition-delay: 0.05s !important; }
-.stagger-2 { transition-delay: 0.12s !important; }
-.stagger-3 { transition-delay: 0.20s !important; }
-.stagger-4 { transition-delay: 0.28s !important; }
-.stagger-5 { transition-delay: 0.36s !important; }
+.stagger-1 {
+  transition-delay: 0.05s !important;
+}
+
+.stagger-2 {
+  transition-delay: 0.12s !important;
+}
+
+.stagger-3 {
+  transition-delay: 0.20s !important;
+}
+
+.stagger-4 {
+  transition-delay: 0.28s !important;
+}
+
+.stagger-5 {
+  transition-delay: 0.36s !important;
+}
 
 /* Spacious Hero Section with Editorial Heading */
 .spacious-hero {
@@ -724,6 +777,41 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   transform: skewX(-4deg);
 }
 
+.dashboard-greeting {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 0.7rem;
+  row-gap: 0.1rem;
+}
+
+.dashboard-hero>div:first-child {
+  flex: 1 1 40rem;
+  min-width: 0;
+}
+
+.dashboard-hero>div:last-child {
+  flex: 0 0 auto;
+}
+
+.dashboard-welcome-title {
+  font-size: clamp(2.1rem, 4vw, 3.35rem);
+  flex: 0 0 auto;
+}
+
+.dashboard-user-name {
+  font-family: 'Newsreader', Georgia, serif;
+  font-size: clamp(1.75rem, 3.2vw, 2.8rem);
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  color: var(--accent-mint);
+  flex: 0 0 auto;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
 .spacious-hero-meta {
   font-family: 'Space Mono', monospace;
   font-size: 0.82rem;
@@ -747,8 +835,8 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   border-radius: var(--radius-lg);
   padding: 2.5rem;
   box-shadow: var(--shadow-card);
-  transition: 
-    border-color 0.4s var(--ease-spring), 
+  transition:
+    border-color 0.4s var(--ease-spring),
     box-shadow 0.4s var(--ease-spring),
     transform 0.2s cubic-bezier(0.2, 0, 0, 1);
   position: relative;
@@ -762,11 +850,9 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: radial-gradient(
-    600px circle at var(--mouse-x, -500px) var(--mouse-y, -500px),
-    rgba(212, 246, 235, 0.12),
-    transparent 45%
-  );
+  background: radial-gradient(600px circle at var(--mouse-x, -500px) var(--mouse-y, -500px),
+      rgba(212, 246, 235, 0.12),
+      transparent 45%);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.4s ease;
@@ -827,6 +913,62 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   gap: 2.5rem;
 }
 
+.dashboard-dual-grid > div {
+  min-width: 0;
+}
+
+.teacher-action-card {
+  padding: clamp(1.25rem, 2vw, 1.75rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  text-align: center;
+}
+
+.teacher-action-card .card-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.teacher-action-card h3 {
+  font-size: 1.45rem;
+}
+
+.teacher-action-card p {
+  font-size: 0.94rem;
+  color: var(--text-secondary);
+}
+
+.teacher-dashboard {
+  --teacher-card-spacing: clamp(2.5rem, 4vw, 3rem);
+}
+
+.teacher-reserve-card {
+  margin-top: var(--teacher-card-spacing);
+}
+
+.teacher-reserve-card .btn {
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 961px) {
+  .teacher-dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 2rem;
+    row-gap: 0;
+  }
+
+  .teacher-dashboard>div {
+    display: grid;
+    grid-template-rows: subgrid;
+    grid-row: span 3;
+  }
+}
+
 @media (max-width: 960px) {
   .dashboard-dual-grid {
     grid-template-columns: 1fr;
@@ -871,10 +1013,13 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
 }
 
 @keyframes radarDot {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     opacity: 0.85;
   }
+
   50% {
     transform: scale(1.4);
     opacity: 1;
@@ -945,12 +1090,10 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   left: -60%;
   width: 40%;
   height: 200%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.22),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.22),
+      transparent);
   transform: rotate(25deg);
   transition: none;
   pointer-events: none;
@@ -1002,6 +1145,26 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   box-shadow: 0 6px 22px rgba(52, 211, 153, 0.4);
 }
 
+.btn-finish-use {
+  background: #a51d32;
+  color: #fff;
+  border: 1px solid #ef7180;
+  font-weight: 600;
+}
+
+.btn-finish-use:hover {
+  background: #861629;
+}
+
+.btn-finish-use::after {
+  content: none;
+}
+
+.btn-finish-use:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
+}
+
 .btn-danger {
   background: rgba(248, 113, 113, 0.12);
   color: #f87171;
@@ -1033,7 +1196,9 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   white-space: nowrap;
 }
 
-.form-input, .form-select, .form-textarea {
+.form-input,
+.form-select,
+.form-textarea {
   width: 100%;
   padding: 0.9rem 1.25rem;
   background: var(--bg-glass-input);
@@ -1046,7 +1211,9 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   backdrop-filter: blur(10px);
 }
 
-.form-input:focus, .form-select:focus, .form-textarea:focus {
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
   outline: none;
   border-color: var(--accent-mint);
   box-shadow: 0 0 0 3px rgba(212, 246, 235, 0.22), 0 0 20px rgba(159, 227, 206, 0.15);
@@ -1080,6 +1247,7 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
     box-shadow: 0 0 15px rgba(251, 191, 36, 0.1);
     border-color: rgba(251, 191, 36, 0.25);
   }
+
   100% {
     box-shadow: 0 0 30px rgba(251, 191, 36, 0.25);
     border-color: rgba(251, 191, 36, 0.5);
@@ -1114,7 +1282,10 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
    ========================================================================== */
 .modal-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(4, 13, 9, 0.82);
   backdrop-filter: blur(14px);
   display: flex;
@@ -1157,7 +1328,7 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
 
 .admin-stat {
   padding: 1.5rem;
-  border-left: 4px solid var(--stat-accent);
+  border-left: 15px solid var(--stat-accent);
 }
 
 .admin-stat dt {
@@ -1194,7 +1365,7 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   font-size: 0.88rem;
 }
 
-.admin-students-table tr > :is(th, td) {
+.admin-students-table tr> :is(th, td) {
   padding-inline: 0.8rem !important;
 }
 
@@ -1291,8 +1462,8 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   margin-bottom: 1.25rem;
 }
 
-.facility-search > div,
-.facility-date-form > div {
+.facility-search>div,
+.facility-date-form>div {
   flex: 1;
   min-width: 0;
 }
@@ -1377,7 +1548,7 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
 .facility-date-form,
 .facility-booking-form,
 .facility-schedule-label,
-.facility-panel > .btn {
+.facility-panel>.btn {
   margin-top: 1rem;
 }
 
@@ -1389,7 +1560,7 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
 
 .facility-time-fields {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
   gap: 0.75rem;
 }
 
@@ -1436,7 +1607,7 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
   font-variant-numeric: tabular-nums;
 }
 
-.facility-reservations li > span {
+.facility-reservations li>span {
   color: var(--text-secondary);
   font-size: 0.875rem;
 }
@@ -1466,7 +1637,9 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
     display: none;
   }
 
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
@@ -1492,6 +1665,7 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
    ========================================================================== */
 
 @media (max-width: 960px) {
+
   /* Navbar Mobile Layout */
   .navbar-wrapper {
     padding: 0.65rem 0.85rem 0;
@@ -1502,17 +1676,20 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
     border-radius: var(--radius-pill);
     flex-wrap: wrap;
     justify-content: space-between;
-    transition: all 0.3s var(--ease-spring);
+    transition: none !important; /* Hilangkan efek animasi loncat/ngebut */
   }
 
   .navbar.menu-expanded {
-    border-radius: var(--radius-md);
-    background: rgba(10, 28, 22, 0.97);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 25px rgba(159, 227, 206, 0.15);
+    border-radius: var(--radius-sm);
+    background: #0d281e; /* Solid dark emerald box */
+    border: 1px solid var(--border-glow);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7);
+    transition: none !important;
   }
 
   .mobile-toggle-btn {
     display: flex;
+    transition: none !important;
   }
 
   /* Collapsible Mobile Navigation Drawer */
@@ -1523,25 +1700,16 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
     flex-direction: column;
     align-items: stretch;
     gap: 0.4rem;
-    padding: 1rem 0 0.4rem;
+    padding: 0.85rem 0 0.2rem;
     margin-top: 0.65rem;
     border-top: 1px solid rgba(212, 246, 235, 0.12);
+    animation: none !important; /* Langsung kotak tanpa animasi loncat/ngebut */
   }
 
   .nav-links.mobile-open {
-    display: flex;
-    animation: mobileNavSlideDown 0.28s var(--ease-spring) forwards;
-  }
-
-  @keyframes mobileNavSlideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    display: flex !important;
+    animation: none !important;
+    transform: none !important;
   }
 
   .nav-link {
@@ -1583,6 +1751,7 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
 }
 
 @media (max-width: 640px) {
+
   /* Brand Typography Collapse */
   .brand-subtitle,
   .navbar--signed-in .brand-subtitle {
@@ -1614,13 +1783,56 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
     gap: 1.25rem;
   }
 
+  /* The desktop hero uses a 40rem flex basis for the text column. When the
+     hero stacks on phones, that basis becomes a large empty vertical block
+     and pushes the account action below the fold. Let the column size to its
+     content on both student and teacher dashboards. */
+  .dashboard-hero > div:first-child {
+    flex: 0 1 auto;
+  }
+
+  .dashboard-hero > div:last-child {
+    flex: 0 1 auto;
+  }
+
+  .teacher-dashboard {
+    --teacher-card-spacing: 1.25rem;
+  }
+
+  .prompt-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1.15rem;
+  }
+
+  .prompt-banner > .btn {
+    width: 100%;
+  }
+
   .spacious-hero-title {
     font-size: clamp(1.75rem, 7vw, 2.3rem);
     line-height: 1.22;
   }
 
+  .dashboard-welcome-title {
+    font-size: clamp(1.75rem, 7vw, 2.3rem);
+  }
+
+  .dashboard-greeting {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dashboard-user-name {
+    margin-top: 0.2rem;
+    font-size: clamp(1.45rem, 6vw, 2rem);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .spacious-hero .btn,
-  .spacious-hero > div:last-child {
+  .spacious-hero>div:last-child {
     width: 100%;
   }
 
@@ -1681,7 +1893,9 @@ body.wide-page .dashboard-dual-grid { grid-template-columns: 1.8fr 1fr; }
 }
 
 /* Wide-page override - only applied to the room detail page */
-body.wide-page .container { max-width: 1320px; }
+body.wide-page .container {
+  max-width: 1320px;
+}
 
 /* Login page motion: one short entrance followed by scroll and focus feedback. */
 .login-shell {
@@ -1780,7 +1994,27 @@ body.wide-page .container { max-width: 1320px; }
   transform: translateX(4px);
 }
 
-.login-demo-group:last-child .quick-demo-grid > .btn:last-child {
+.quick-demo-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-rows: 1fr;
+}
+
+.quick-demo-grid > .btn {
+  width: 100%;
+  min-width: 0;
+  min-height: 54px;
+  height: 100%;
+  line-height: 1.35;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.quick-demo-grid > .btn > i {
+  flex: 0 0 1rem;
+  text-align: center;
+}
+
+.quick-demo-grid > .btn:last-child:nth-child(odd) {
   grid-column: 1 / -1 !important;
 }
 
@@ -1816,11 +2050,11 @@ body.wide-page .container { max-width: 1320px; }
     animation: login-light-in 900ms 140ms var(--ease-spring) backwards;
   }
 
-  .login-form > .form-group:first-child {
+  .login-form>.form-group:first-child {
     animation: login-field-in 520ms 200ms var(--ease-spring) backwards;
   }
 
-  .login-form > .form-group:nth-child(2) {
+  .login-form>.form-group:nth-child(2) {
     animation: login-field-in 520ms 260ms var(--ease-spring) backwards;
   }
 
@@ -1829,12 +2063,13 @@ body.wide-page .container { max-width: 1320px; }
   }
 
   .login-panel:focus-within,
-  .login-form:focus-within > .form-group,
-  .login-form:focus-within > .login-submit {
+  .login-form:focus-within>.form-group,
+  .login-form:focus-within>.login-submit {
     animation: none;
   }
 
   @supports (animation-timeline: view()) {
+
     .login-demo-divider,
     .login-demo-group {
       animation: login-demo-enter 1ms linear both;
@@ -1854,27 +2089,310 @@ body.wide-page .container { max-width: 1320px; }
 }
 
 @keyframes login-enter {
-  from { opacity: 0.45; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0.45;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes login-field-in {
-  from { opacity: 0.7; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0.7;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes login-light-in {
-  from { opacity: 0; transform: scaleX(0.12); }
-  to { opacity: 0.65; transform: scaleX(1); }
+  from {
+    opacity: 0;
+    transform: scaleX(0.12);
+  }
+
+  to {
+    opacity: 0.65;
+    transform: scaleX(1);
+  }
 }
 
 @keyframes login-demo-enter {
-  from { opacity: 0.8; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0.8;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes login-background-shift {
-  from { transform: translateY(0); }
-  to { transform: translateY(-28px); }
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-28px);
+  }
 }
 
+/* Glass surfaces share the same edge lighting, with depth and tint set by purpose. */
+:is(.card, .facility-panel, .login-panel, .modal-card) {
+  --glass-rim: 191, 255, 234;
+  --glass-tint: 126, 238, 208;
+  --glass-edge: 0.28;
+  --glass-top: 0.48;
+  --glass-sheen: 0.1;
+  --glass-color: 0.16;
+  --glass-base: rgba(17, 47, 39, 0.52);
+  --glass-blur: 17px;
+  --glass-shadow: 0.32;
+  border-color: rgba(var(--glass-rim), var(--glass-edge));
+  border-top-color: rgba(var(--glass-rim), var(--glass-top));
+  background:
+    linear-gradient(133deg, rgba(238, 255, 250, var(--glass-sheen)), transparent 32%),
+    radial-gradient(ellipse at 4% 0%, rgba(var(--glass-tint), var(--glass-color)), transparent 61%),
+    var(--glass-base);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(145%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(145%);
+  box-shadow: inset 0 1px rgba(244, 255, 252, 0.12),
+    0 14px 32px rgba(0, 12, 8, var(--glass-shadow));
+}
+
+.card:is(:hover, :focus-within) {
+  border-color: rgba(var(--glass-rim), calc(var(--glass-edge) + 0.19));
+}
+
+.card::before {
+  background: radial-gradient(
+    350px circle at var(--mouse-x, -500px) var(--mouse-y, -500px),
+    rgba(var(--glass-tint), var(--glass-hover, 0.09)),
+    transparent 58%
+  );
+}
+
+/* Overview and Facilities share the same mint glass. */
+:is(.dashboard-dual-grid .card, .card.catalog-card) {
+  border-color: rgba(191, 255, 234, 0.43);
+  border-top-color: rgba(232, 255, 248, 0.7);
+  background:
+    linear-gradient(133deg, rgba(238, 255, 250, var(--mint-sheen, 0.19)), transparent 30%),
+    radial-gradient(ellipse at 2% 0%, var(--mint-reflection, rgba(126, 238, 208, 0.31)), transparent 48%),
+    radial-gradient(ellipse at 98% 100%, rgba(94, 186, 207, 0.18), transparent 50%),
+    var(--mint-surface, rgba(25, 66, 56, 0.27));
+  -webkit-backdrop-filter: blur(24px) saturate(155%);
+  backdrop-filter: blur(24px) saturate(155%);
+  box-shadow: inset 0 1px rgba(244, 255, 252, 0.38),
+    inset 0 0 26px rgba(167, 249, 224, 0.09),
+    0 20px 44px rgba(0, 12, 8, 0.38);
+}
+
+:is(.dashboard-dual-grid .card, .card.catalog-card):is(:hover, :focus-within) {
+  border-color: rgba(213, 255, 241, 0.7);
+}
+
+:is(.dashboard-dual-grid .card, .card.catalog-card)::before {
+  background: radial-gradient(
+    600px circle at var(--mouse-x, -500px) var(--mouse-y, -500px),
+    rgba(212, 246, 235, 0.12),
+    transparent 45%
+  );
+}
+
+:is(.dashboard-dual-grid, .catalog-card) .card-icon {
+  background: rgba(199, 254, 232, 0.18);
+  border-color: rgba(199, 254, 232, 0.36);
+  box-shadow: inset 0 1px rgba(240, 255, 250, 0.24);
+}
+
+/* Keep the centered reservation layout independent of the shared glass. */
+.card.reservation-empty {
+  text-align: center;
+  padding: clamp(2rem, 5vw, 4rem) clamp(1rem, 4vw, 2.5rem);
+}
+
+.reservation-empty .card-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.25rem;
+  font-size: 1.6rem;
+}
+
+.reservation-empty h3 {
+  font-size: clamp(1.5rem, 3vw, 1.85rem);
+  margin-bottom: 0.55rem;
+}
+
+.reservation-empty p {
+  max-width: 38ch;
+  margin: 0 auto 1.75rem;
+  color: #c4e5d9;
+}
+
+:is(.directory-card, .facility-contact) {
+  --glass-rim: 197, 226, 178;
+  --glass-tint: 168, 223, 150;
+  --glass-top: 0.4;
+  --glass-base: rgba(25, 48, 35, 0.58);
+}
+
+/* Facilities and booking */
+.catalog-card {
+  --text-secondary: rgba(212, 246, 235, 0.88);
+  --mint-sheen: 0.09;
+  --mint-reflection: rgba(126, 238, 208, 0.22);
+  --mint-surface: rgba(22, 66, 46, 0.66);
+}
+
+@supports (color: color-mix(in srgb, black, white)) {
+  .catalog-card {
+    --mint-reflection: color-mix(in srgb,
+      rgba(134, 236, 181, 0.24), rgba(102, 182, 224, 0.20) var(--catalog-position, 0%));
+    --mint-surface: color-mix(in srgb,
+      rgba(22, 66, 46, 0.66), rgba(10, 39, 59, 0.70) var(--catalog-position, 0%));
+  }
+}
+
+:is(.schedule-panel, .admin-table) {
+  --glass-edge: 0.18;
+  --glass-top: 0.3;
+  --glass-sheen: 0.04;
+  --glass-color: 0.08;
+  --glass-base: rgba(13, 40, 34, 0.79);
+  --glass-blur: 12px;
+  --glass-hover: 0.035;
+}
+
+.booking-panel {
+  --glass-edge: 0.36;
+  --glass-top: 0.57;
+  --glass-color: 0.24;
+  --glass-base: rgba(21, 59, 47, 0.61);
+}
+
+.booking-card {
+  --glass-tint: 113, 194, 205;
+  --glass-sheen: 0.07;
+  --glass-base: rgba(13, 40, 39, 0.65);
+}
+
+.approval-card {
+  --glass-rim: 238, 210, 159;
+  --glass-tint: 213, 174, 103;
+  --glass-base: rgba(36, 48, 35, 0.63);
+}
+
+.quiet-card {
+  --glass-edge: 0.19;
+  --glass-top: 0.33;
+  --glass-sheen: 0.06;
+  --glass-color: 0.1;
+  --glass-hover: 0.045;
+}
+
+/* Admin and overlays */
+.card.admin-stat {
+  background: #102c22;
+  border-color: var(--border-card);
+  border-left: 6px solid var(--stat-accent);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: var(--shadow-card);
+}
+
+.card.admin-stat::before {
+  content: none;
+}
+
+.admin-upload {
+  --glass-rim: 152, 213, 241;
+  --glass-tint: 104, 186, 226;
+  --glass-color: 0.2;
+  --glass-base: rgba(13, 35, 44, 0.64);
+}
+
+.login-panel {
+  --glass-rim: 196, 242, 227;
+  --glass-top: 0.58;
+  --glass-sheen: 0.14;
+  --glass-color: 0.23;
+  --glass-base: rgba(16, 44, 37, 0.7);
+  --glass-blur: 23px;
+}
+
+.modal-card {
+  --glass-edge: 0.38;
+  --glass-top: 0.52;
+  --glass-sheen: 0.07;
+  --glass-color: 0.13;
+  --glass-base: rgba(15, 42, 34, 0.94);
+  --glass-blur: 20px;
+  --glass-shadow: 0.55;
+}
+/* ==========================================================================
+   Admin Data Page Layout
+   ========================================================================== */
+.admin-data-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 1.25rem;
+  align-items: stretch;
+  margin-bottom: 2rem;
+}
+
+.admin-excel-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.admin-sqlite-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-tab-btn {
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .admin-data-tools {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .admin-tabs {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .admin-tab-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+}

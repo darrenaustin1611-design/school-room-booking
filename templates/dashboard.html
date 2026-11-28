@@ -4,14 +4,12 @@
 
 {% block content %}
 <!-- Spacious Editorial Hero -->
-<div class="spacious-hero">
+<div class="spacious-hero dashboard-hero">
     <div>
-        <span class="mono-tag" style="margin-bottom: 0.6rem;">
-            CAMPUS SPACE &bull; RESOURCE MANAGEMENT
-        </span>
-        <h1 class="spacious-hero-title">
-            Welcome back, <em>{{ current_user.name }}</em>
-        </h1>
+        <div class="dashboard-greeting">
+            <h1 class="spacious-hero-title dashboard-welcome-title">Welcome back,</h1>
+            <h2 class="dashboard-user-name">{{ current_user.name }}</h2>
+        </div>
         <div class="spacious-hero-meta">
             {% if current_user.is_student() %}
                 <span><i class="fas fa-id-badge" style="color: var(--accent-mint); margin-right: 0.35rem;"></i> ID: <strong>{{ current_user.student_id_number }}</strong></span>
@@ -30,9 +28,11 @@
                 <i class="fas fa-plus"></i> Reserve a Space
             </a>
         {% elif current_user.is_teacher() %}
-            <a href="{{ url_for('approvals_queue') }}" class="btn btn-primary">
-                <i class="fas fa-clipboard-check"></i> Pending Requests ({{ pending_approvals_count }})
-            </a>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
+                <a href="{{ url_for('approvals_queue') }}" class="btn btn-secondary">
+                    <i class="fas fa-clipboard-check"></i> Pending Requests ({{ pending_approvals_count }})
+                </a>
+            </div>
         {% endif %}
     </div>
 </div>
@@ -51,22 +51,18 @@
             </p>
         </div>
     </div>
-    <button onclick="confirmComing({{ active_booking.id }})" class="btn btn-primary" style="white-space: nowrap; background: #fbbf24; border-color: #fbbf24; color: #071711;">
+    <button onclick="confirmComing({{ active_booking.id }})" class="btn btn-primary" style="background: #fbbf24; border-color: #fbbf24; color: #071711;">
         <i class="fas fa-person-walking"></i> Confirm: On My Way
     </button>
 </div>
 {% endif %}
 
 <!-- Spacious Dual Layout -->
-<div class="dashboard-dual-grid">
+<div class="dashboard-dual-grid{% if current_user.is_teacher() %} teacher-dashboard{% endif %}">
 
     <!-- Left Main Column (Wide, Airy) -->
     <div>
         {% if current_user.is_student() %}
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <span class="mono-tag">[01 // ACTIVE RESERVATION]</span>
-            </div>
-
             {% if active_booking %}
                 <div class="card" style="border-left: 3px solid {% if active_booking.status == 'APPROVED' %}var(--status-approved){% elif active_booking.status == 'CHECKED_IN' %}var(--status-checkedin){% else %}var(--status-pending){% endif %};">
                     <div class="card-header">
@@ -109,11 +105,11 @@
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
                         {% if active_booking.status in ['APPROVED', 'PENDING_CONFIRMATION'] %}
                             <button onclick="toggleUsage({{ active_booking.id }}, 'start')" class="btn btn-primary" style="background: #10b981; border-color: #10b981; font-weight: 600; padding: 0.75rem 1.6rem; font-size: 1rem;">
-                                <i class="fas fa-play"></i> Mulai Pakai
+                                <i class="fas fa-play"></i> Start Use
                             </button>
                         {% elif active_booking.status == 'CHECKED_IN' %}
-                            <button onclick="toggleUsage({{ active_booking.id }}, 'finish')" class="btn btn-danger" style="background: #ef4444; border-color: #ef4444; font-weight: 600; padding: 0.75rem 1.6rem; font-size: 1rem;">
-                                <i class="fas fa-stop"></i> Selesai Pakai
+                            <button onclick="toggleUsage({{ active_booking.id }}, 'finish')" class="btn btn-finish-use" style="padding: 0.75rem 1.6rem; font-size: 1rem;">
+                                <i class="fas fa-stop"></i> Finish Use
                             </button>
                             {% if active_booking.extension_status == 'PENDING' %}
                                 <span class="badge badge-pending">Extension +{{ active_booking.extension_minutes }} min awaiting approval</span>
@@ -126,7 +122,7 @@
                     </div>
                 </div>
             {% else %}
-                <div class="card" style="text-align: center; padding: 4rem 2.5rem;">
+                <div class="card reservation-empty" style="text-align: center; padding: 4rem 2.5rem;">
                     <div class="card-icon" style="margin: 0 auto 1.5rem auto; width: 64px; height: 64px; font-size: 1.6rem;">
                         <i class="fas fa-door-open"></i>
                     </div>
@@ -141,10 +137,6 @@
             {% endif %}
 
         {% elif current_user.is_teacher() %}
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <span class="mono-tag">[01 // PENDING FACILITY REQUESTS]</span>
-            </div>
-            
             {% if pending_approvals %}
                 <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                     {% for item in pending_approvals %}
@@ -155,7 +147,7 @@
                                     <h3 style="margin-top: 0.5rem; font-size: 1.5rem;">{{ item.room.name }}</h3>
                                 </div>
                                 <span class="mono" style="font-size: 0.78rem; color: var(--text-muted);">
-                                    By {{ item.student.name }} (Gr. {{ item.student.grade_level }})
+                                    By {{ item.student.name }}{% if item.student.is_student() %} (Gr. {{ item.student.grade_level }}){% else %} ({{ item.student.department }}){% endif %}
                                 </span>
                             </div>
                             <p class="mono" style="font-size: 0.86rem; color: var(--accent-mint); margin-bottom: 0.5rem;">
@@ -181,23 +173,41 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <div class="card" style="text-align: center; padding: 3.5rem 2.5rem;">
-                    <div class="card-icon" style="margin: 0 auto 1.2rem auto; width: 56px; height: 56px;">
+                <div class="card teacher-action-card">
+                    <div class="card-icon" aria-hidden="true">
                         <i class="fas fa-check-double"></i>
                     </div>
-                    <h3 style="font-size: 1.6rem; margin-bottom: 0.35rem;">Approval Queue Empty</h3>
-                    <p style="color: var(--text-secondary); font-size: 0.95rem;">All incoming booking requests have been reviewed.</p>
+                    <h3>Approval Queue Empty</h3>
+                    <p>All incoming booking requests have been reviewed.</p>
                 </div>
             {% endif %}
+            <section class="card teacher-action-card teacher-reserve-card" aria-labelledby="reserve-place-title">
+                {% if active_booking %}
+                <span class="badge badge-{{ active_booking.status.lower() }}">{{ active_booking.status }}</span>
+                <h3 id="reserve-place-title">{{ active_booking_room.name }}</h3>
+                <p>{{ active_booking.booking_date }} &bull; {{ active_booking.start_time }} &ndash; {{ active_booking.end_time }} WIB</p>
+                {% if active_booking.status == 'CHECKED_IN' %}
+                <button onclick="toggleUsage({{ active_booking.id }}, 'finish')" class="btn btn-finish-use">Finish Use</button>
+                {% elif active_booking.status in ['APPROVED', 'PENDING_CONFIRMATION'] %}
+                <button onclick="toggleUsage({{ active_booking.id }}, 'start')" class="btn btn-primary">Start Use</button>
+                {% endif %}
+                <a href="{{ url_for('my_bookings') }}" class="btn btn-secondary">View My Bookings</a>
+                {% else %}
+                <div class="card-icon" aria-hidden="true">
+                    <i class="fas fa-door-open"></i>
+                </div>
+                <h3 id="reserve-place-title">Reserve Place</h3>
+                <p>Choose a facility and check available times.</p>
+                <a href="{{ url_for('rooms_catalog') }}" class="btn btn-primary">
+                    <i class="fas fa-layer-group" aria-hidden="true"></i> Browse Campus Facilities
+                </a>
+                {% endif %}
+            </section>
         {% endif %}
     </div>
 
     <!-- Right Secondary Column: Notifications & Directory -->
     <div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <span class="mono-tag">[02 // SYSTEM DISPATCH]</span>
-        </div>
-
         <div class="card" style="padding: 2.2rem;">
             <h3 style="font-size: 1.3rem; margin-bottom: 1.2rem;">
                 <i class="fas fa-bell" style="color: var(--accent-mint); font-size: 1rem; margin-right: 0.4rem;"></i>
@@ -225,7 +235,7 @@
             {% endif %}
         </div>
 
-        <div class="card" style="margin-top: 2rem; padding: 2.2rem;">
+        <div class="card" style="margin-top: var(--teacher-card-spacing, 2rem); padding: 2.2rem;">
             <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Faculty Directory</h3>
             <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.4rem;">
                 Reach out to Teachers-in-Charge regarding specialized laboratory equipment or after-hours authorizations.
@@ -240,7 +250,6 @@
 <!-- Extension Modal -->
 <div class="modal-overlay" id="extensionModal">
     <div class="modal-card">
-        <span class="mono-tag" style="margin-bottom: 0.5rem;">TIME ADJUSTMENT</span>
         <h2 style="font-size: 1.8rem; margin: 0.4rem 0 0.5rem;">Request Extension</h2>
         <p style="font-size: 0.92rem; color: var(--text-secondary); margin-bottom: 1.75rem;">
             Request extra room allocation if no subsequent reservations exist for this facility.

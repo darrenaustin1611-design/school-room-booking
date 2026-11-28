@@ -13,6 +13,10 @@ ENV/
 # Backups
 cloud_backups/
 
+# SQLite runtime sidecars (the tracked database remains separate)
+*.db-wal
+*.db-shm
+
 # Operating System Files
 .DS_Store
 Thumbs.db

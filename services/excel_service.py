@@ -294,7 +294,7 @@ class ExcelService:
                         if tic_row:
                             tic_id = tic_row['id']
                         else:
-                            errors.append(f"Sheet Ruangan baris {row_num}: Email TIC '{tic_email}' tidak ditemukan di sistem.")
+                            errors.append(f"Rooms sheet, row {row_num}: PIC email '{tic_email}' was not found in the system.")
 
                     # Default TIC to admin or first teacher if not found
                     if not tic_id:
@@ -391,7 +391,7 @@ class ExcelService:
 
                     # Auto generate email if empty
                     if not email and nis:
-                        email = f"{nis}@smamarsudirinibekasi.sch.id"
+                        email = f"student{nis}@example.com"
 
                     pw_hash = security.generate_password_hash(pw_raw) if pw_raw else None
 
@@ -446,7 +446,7 @@ class ExcelService:
 
         return {
             'success': True,
-            'message': f"Sinkronisasi berhasil! {summary['teachers_synced']} Guru/Staf, {summary['rooms_synced']} Ruangan, {summary['students_synced']} Siswa telah diperbarui.",
+            'message': f"Synchronization complete: {summary['teachers_synced']} teachers/staff, {summary['rooms_synced']} rooms, and {summary['students_synced']} students updated.",
             'summary': summary,
             'errors': errors
         }

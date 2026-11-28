@@ -1,4 +1,6 @@
 import unittest
+import tempfile
+from unittest.mock import patch
 import os
 import openpyxl
 from config import Config
@@ -9,11 +11,11 @@ from services.room_service import RoomService
 
 class TestExcelSync(unittest.TestCase):
     def setUp(self):
-        if os.path.exists(Config.DATABASE_PATH):
-            try:
-                os.remove(Config.DATABASE_PATH)
-            except Exception:
-                pass
+        temp_db = tempfile.TemporaryDirectory(prefix='edureserve-excel-test-')
+        self.addCleanup(temp_db.cleanup)
+        database_path = patch.object(Config, 'DATABASE_PATH', os.path.join(temp_db.name, 'test.db'))
+        database_path.start()
+        self.addCleanup(database_path.stop)
         init_db()
 
     def test_export_and_import_excel_cycle(self):
@@ -45,7 +47,7 @@ class TestExcelSync(unittest.TestCase):
         # Update teacher Dr. Thorne's phone in sheet
         ws_teachers = wb['Guru_dan_Staf']
         for row in range(2, ws_teachers.max_row + 1):
-            if ws_teachers.cell(row=row, column=1).value == "thorne@smamarsudirinibekasi.sch.id":
+            if ws_teachers.cell(row=row, column=1).value == "teacher1@example.com":
                 ws_teachers.cell(row=row, column=5).value = "0819-9999-8888" # New phone
 
         # Save and import
@@ -60,7 +62,7 @@ class TestExcelSync(unittest.TestCase):
         # Verify in database
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute("SELECT contact_phone FROM users WHERE email = 'thorne@smamarsudirinibekasi.sch.id'")
+        cursor.execute("SELECT contact_phone FROM users WHERE email = 'teacher1@example.com'")
         updated_phone = cursor.fetchone()['contact_phone']
         conn.close()
 
